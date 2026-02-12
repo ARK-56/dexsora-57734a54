@@ -16,7 +16,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify the calling user is an admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization");
 
@@ -29,7 +28,7 @@ Deno.serve(async (req) => {
       .select("role")
       .eq("user_id", caller.id);
 
-    const isAdmin = callerRoles?.some((r) => r.role === "admin");
+    const isAdmin = callerRoles?.some((r: any) => r.role === "admin");
     if (!isAdmin) throw new Error("Only admins can manage users");
 
     const { action, ...payload } = await req.json();
@@ -55,6 +54,41 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ message: "User created", userId: newUser.user.id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "update") {
+      const { userId, fullName, email, role } = payload;
+      if (!userId) throw new Error("Missing userId");
+
+      // Update profile
+      if (fullName !== undefined || email !== undefined) {
+        const updates: any = {};
+        if (fullName !== undefined) updates.full_name = fullName;
+        if (email !== undefined) updates.email = email;
+
+        const { error: profileError } = await supabaseAdmin
+          .from("profiles")
+          .update(updates)
+          .eq("user_id", userId);
+
+        if (profileError) throw profileError;
+      }
+
+      // Update role if provided
+      if (role) {
+        // Delete existing roles and insert new one
+        await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+        const { error: roleError } = await supabaseAdmin
+          .from("user_roles")
+          .insert({ user_id: userId, role });
+
+        if (roleError) throw roleError;
+      }
+
+      return new Response(
+        JSON.stringify({ message: "User updated" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

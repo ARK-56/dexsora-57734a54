@@ -105,7 +105,7 @@ const Index = () => {
               onClick={() => setIsSubmitOpen(true)}
               className="shrink-0 rounded-xl bg-success px-5 py-2.5 text-sm font-semibold text-success-foreground shadow-sm transition-all hover:opacity-90"
             >
-              ➕ Submit New Lead
+              Submit New Lead
             </button>
           )}
         </div>
