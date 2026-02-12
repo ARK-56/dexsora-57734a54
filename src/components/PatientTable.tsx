@@ -11,51 +11,67 @@ export const PatientTable = ({ leads, onSelectLead }: PatientTableProps) => {
     <>
       {/* Desktop table */}
       <div className="hidden md:block overflow-hidden rounded-xl border border-border bg-card">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                ID
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Patient
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Status
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Recent Note
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Updated
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {leads.map((lead) => (
-              <tr
-                key={lead.id}
-                onClick={() => onSelectLead(lead)}
-                className="cursor-pointer transition-colors hover:bg-muted/30"
-              >
-                <td className="px-4 py-3.5 text-sm font-mono font-medium text-muted-foreground">
-                  #{lead.id}
-                </td>
-                <td className="px-4 py-3.5">
-                  <p className="text-sm font-semibold text-foreground">{lead.patientName}</p>
-                  <p className="text-xs text-muted-foreground">DOB: {lead.dob}</p>
-                </td>
-                <td className="px-4 py-3.5">
-                  <StatusBadge status={lead.status} />
-                </td>
-                <td className="px-4 py-3.5 text-sm text-muted-foreground max-w-xs truncate">
-                  {lead.notes[0]?.text || "—"}
-                </td>
-                <td className="px-4 py-3.5 text-sm text-muted-foreground">{lead.updatedAt}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-border bg-muted/50">
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  ID
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Patient
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Submit Date
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  DME Items
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Recent Note
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Updated
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {leads.map((lead, idx) => (
+                <tr
+                  key={lead.id}
+                  onClick={() => onSelectLead(lead)}
+                  className={`cursor-pointer border-b border-border transition-colors hover:bg-muted/30 ${
+                    idx % 2 === 1 ? "bg-muted/10" : ""
+                  }`}
+                >
+                  <td className="px-4 py-3 text-sm font-mono font-medium text-muted-foreground whitespace-nowrap">
+                    #{lead.id}
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-semibold text-foreground uppercase">{lead.patientName}</p>
+                    <p className="text-xs text-muted-foreground">DOB: {lead.dob}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={lead.status} />
+                  </td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                    {lead.createdAt}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
+                    {lead.dmeItems || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground max-w-[200px] truncate">
+                    {lead.notes[0]?.text || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">{lead.updatedAt}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Mobile cards */}
@@ -73,11 +89,10 @@ export const PatientTable = ({ leads, onSelectLead }: PatientTableProps) => {
               </div>
               <StatusBadge status={lead.status} />
             </div>
-            {lead.notes[0] && (
-              <p className="text-xs text-muted-foreground mt-2 border-t border-border pt-2">
-                📄 {lead.notes[0].text}
-              </p>
-            )}
+            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 border-t border-border pt-2">
+              <span>Submitted: {lead.createdAt}</span>
+              {lead.dmeItems && <span>{lead.dmeItems}</span>}
+            </div>
           </div>
         ))}
       </div>

@@ -35,6 +35,7 @@ export interface Lead {
   address: string;
   medicareId: string;
   ppoId: string;
+  dmeItems?: string;
   status: LeadStatus;
   denialReason?: string;
   notes: Note[];

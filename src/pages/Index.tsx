@@ -43,13 +43,24 @@ const Index = () => {
     address: string;
     medicareId: string;
     ppoId: string;
+    dmeItems: string;
+    documentName: string;
   }) => {
     const newLead: Lead = {
       id: `A${100 + leads.length + 1}`,
-      ...data,
+      patientName: data.patientName,
+      dob: data.dob,
+      phone: data.phone,
+      email: data.email,
+      address: data.address,
+      medicareId: data.medicareId,
+      ppoId: data.ppoId,
+      dmeItems: data.dmeItems || undefined,
       status: "Pending",
       notes: [],
-      documents: [],
+      documents: data.documentName
+        ? [{ id: `d${Date.now()}`, name: data.documentName, type: "Uploaded", uploadedBy: "Submitter", uploadedAt: new Date().toLocaleDateString() }]
+        : [],
       createdAt: new Date().toLocaleDateString(),
       updatedAt: new Date().toLocaleDateString(),
     };

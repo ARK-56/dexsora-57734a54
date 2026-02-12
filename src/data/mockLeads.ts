@@ -10,6 +10,7 @@ export const mockLeads: Lead[] = [
     address: "221B Maple St, Austin, TX 78701",
     medicareId: "XXXX-XX-4432",
     ppoId: "Aetna",
+    dmeItems: "BT Wrist",
     status: "Approved",
     notes: [
       { id: "n1", text: "Auth received 04/10", author: "Auth Team", date: "04/10/2025", isInternal: true },
@@ -32,6 +33,7 @@ export const mockLeads: Lead[] = [
     address: "4502 Oak Blvd, Houston, TX 77002",
     medicareId: "XXXX-XX-7891",
     ppoId: "UnitedHealth",
+    dmeItems: "Back",
     status: "Pending",
     notes: [
       { id: "n4", text: "Insurance card uploaded", author: "Dr. Office", date: "04/12/2025", isInternal: false },
@@ -51,6 +53,7 @@ export const mockLeads: Lead[] = [
     address: "890 Pine Ave, Dallas, TX 75201",
     medicareId: "XXXX-XX-3310",
     ppoId: "Cigna",
+    dmeItems: "BI Wrists",
     status: "Denied (SNS)",
     denialReason: "Medicare ID mismatch",
     notes: [
@@ -71,6 +74,7 @@ export const mockLeads: Lead[] = [
     address: "1100 Elm St, San Antonio, TX 78205",
     medicareId: "XXXX-XX-5567",
     ppoId: "Humana",
+    dmeItems: "BT Wrist",
     status: "Delivered",
     notes: [
       { id: "n6", text: "Package delivered, confirmed by patient", author: "Logistics", date: "04/14/2025", isInternal: true },
@@ -90,6 +94,7 @@ export const mockLeads: Lead[] = [
     address: "333 Cedar Ln, Austin, TX 78704",
     medicareId: "XXXX-XX-8823",
     ppoId: "BlueCross",
+    dmeItems: "BT Wrist",
     status: "Open",
     notes: [
       { id: "n8", text: "Insurance verification in progress", author: "Eligibility", date: "04/13/2025", isInternal: true },
@@ -109,6 +114,7 @@ export const mockLeads: Lead[] = [
     address: "2200 Birch Rd, Fort Worth, TX 76102",
     medicareId: "XXXX-XX-1124",
     ppoId: "Aetna",
+    dmeItems: "Back",
     status: "Auth",
     notes: [
       { id: "n9", text: "Predetermination letter sent", author: "Auth Team", date: "04/12/2025", isInternal: true },
