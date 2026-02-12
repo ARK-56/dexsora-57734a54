@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Lead, LeadStatus } from "@/types/lead";
-import { mockLeads } from "@/data/mockLeads";
+import { LeadStatus } from "@/types/lead";
 import { Header } from "@/components/Header";
 import { StatsBar } from "@/components/StatsBar";
 import { PatientTable } from "@/components/PatientTable";
@@ -9,14 +8,16 @@ import { SubmitLeadModal } from "@/components/SubmitLeadModal";
 import { LifecycleBar } from "@/components/LifecycleBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { Filter } from "lucide-react";
+import { Filter, Trash2 } from "lucide-react";
+import { useLeads, DbLead } from "@/hooks/useLeads";
 
 const Index = () => {
   const { user, loading, hasAdminAccess, roles } = useAuth();
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const { leads, loading: leadsLoading, createLead, updateLeadStatus, deleteLeads } = useLeads();
+  const [selectedLead, setSelectedLead] = useState<DbLead | null>(null);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "All">("All");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   if (loading) {
     return (
@@ -35,7 +36,7 @@ const Index = () => {
       ? leads
       : leads.filter((l) => l.status === statusFilter);
 
-  const handleSubmitLead = (data: {
+  const handleSubmitLead = async (data: {
     patientName: string;
     dob: string;
     phone: string;
@@ -46,40 +47,33 @@ const Index = () => {
     dmeItems: string;
     documents: { name: string; url: string }[];
   }) => {
-    const newLead: Lead = {
-      id: `A${100 + leads.length + 1}`,
-      patientName: data.patientName,
-      dob: data.dob,
-      phone: data.phone,
-      email: data.email,
-      address: data.address,
-      medicareId: data.medicareId,
-      ppoId: data.ppoId,
-      dmeItems: data.dmeItems || undefined,
-      status: "Pending",
-      notes: [],
-      documents: data.documents.map((d, i) => ({
-        id: `d${Date.now()}-${i}`,
-        name: d.name,
-        type: "Uploaded",
-        uploadedBy: "Submitter",
-        uploadedAt: new Date().toLocaleDateString(),
-        url: d.url,
-      })),
-      createdAt: new Date().toLocaleDateString(),
-      updatedAt: new Date().toLocaleDateString(),
-    };
-    setLeads((prev) => [newLead, ...prev]);
+    await createLead(data);
   };
 
-  const handleUpdateLeadStatus = (leadId: string, newStatus: LeadStatus) => {
-    setLeads((prev) =>
-      prev.map((l) =>
-        l.id === leadId ? { ...l, status: newStatus, updatedAt: new Date().toLocaleDateString() } : l
-      )
-    );
+  const handleUpdateLeadStatus = async (leadId: string, newStatus: LeadStatus) => {
+    await updateLeadStatus(leadId, newStatus);
     if (selectedLead?.id === leadId) {
-      setSelectedLead((prev) => prev ? { ...prev, status: newStatus, updatedAt: new Date().toLocaleDateString() } : null);
+      setSelectedLead((prev) => prev ? { ...prev, status: newStatus } : null);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+    await deleteLeads(selectedIds);
+    setSelectedIds([]);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.length === filteredLeads.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredLeads.map((l) => l.id));
     }
   };
 
@@ -87,7 +81,6 @@ const Index = () => {
     "All", "Pending", "Open", "Auth", "Approved", "Delivered", "Closed", "Denied (SNS)", "Denied (Auth)",
   ];
 
-  // Roles with admin access cannot submit leads; only doctor/logistics can
   const canSubmit = !hasAdminAccess;
 
   return (
@@ -116,19 +109,43 @@ const Index = () => {
             ))}
           </div>
 
-          {canSubmit && (
-            <button
-              onClick={() => setIsSubmitOpen(true)}
-              className="shrink-0 rounded-xl bg-success px-5 py-2.5 text-sm font-semibold text-success-foreground shadow-sm transition-all hover:opacity-90"
-            >
-              Submit New Lead
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && hasAdminAccess && (
+              <button
+                onClick={handleDeleteSelected}
+                className="flex items-center gap-1.5 shrink-0 rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground shadow-sm transition-all hover:opacity-90"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete ({selectedIds.length})
+              </button>
+            )}
+            {canSubmit && (
+              <button
+                onClick={() => setIsSubmitOpen(true)}
+                className="shrink-0 rounded-xl bg-success px-5 py-2.5 text-sm font-semibold text-success-foreground shadow-sm transition-all hover:opacity-90"
+              >
+                Submit New Lead
+              </button>
+            )}
+          </div>
         </div>
 
-        <PatientTable leads={filteredLeads} onSelectLead={setSelectedLead} />
+        {leadsLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
+        ) : (
+          <PatientTable
+            leads={filteredLeads}
+            onSelectLead={setSelectedLead}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onToggleAll={toggleAll}
+            allSelected={selectedIds.length === filteredLeads.length && filteredLeads.length > 0}
+          />
+        )}
 
-        {filteredLeads.length === 0 && (
+        {!leadsLoading && filteredLeads.length === 0 && (
           <div className="py-16 text-center">
             <p className="text-lg text-muted-foreground">No leads found for this filter.</p>
           </div>

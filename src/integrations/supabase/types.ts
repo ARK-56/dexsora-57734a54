@@ -14,6 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
+      lead_documents: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          name: string
+          uploaded_by: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          name: string
+          uploaded_by?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          name?: string
+          uploaded_by?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_documents_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_notes: {
+        Row: {
+          author: string
+          created_at: string
+          id: string
+          is_internal: boolean
+          lead_id: string
+          text: string
+        }
+        Insert: {
+          author: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          lead_id: string
+          text: string
+        }
+        Update: {
+          author?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          lead_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          address: string | null
+          created_at: string
+          denial_reason: string | null
+          dme_items: string | null
+          dob: string
+          email: string | null
+          id: string
+          medicare_id: string
+          patient_name: string
+          phone: string | null
+          ppo_id: string | null
+          status: string
+          submitted_by: string | null
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          denial_reason?: string | null
+          dme_items?: string | null
+          dob: string
+          email?: string | null
+          id?: string
+          medicare_id: string
+          patient_name: string
+          phone?: string | null
+          ppo_id?: string | null
+          status?: string
+          submitted_by?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          denial_reason?: string | null
+          dme_items?: string | null
+          dob?: string
+          email?: string | null
+          id?: string
+          medicare_id?: string
+          patient_name?: string
+          phone?: string | null
+          ppo_id?: string | null
+          status?: string
+          submitted_by?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
