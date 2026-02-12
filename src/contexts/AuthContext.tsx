@@ -5,14 +5,18 @@ import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
+const ADMIN_ACCESS_ROLES: AppRole[] = ["admin", "eligibility", "auth_team"];
+
 interface AuthContextType {
   user: User | null;
   profile: { full_name: string | null; email: string | null } | null;
   roles: AppRole[];
   isAdmin: boolean;
+  hasAdminAccess: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,11 +42,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (rolesRes.data) setRoles(rolesRes.data.map((r) => r.role));
   };
 
+  const refreshProfile = async () => {
+    if (user) await fetchUserData(user.id);
+  };
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser(session.user);
-        // Use setTimeout to avoid potential deadlock with Supabase auth
         setTimeout(() => fetchUserData(session.user.id), 0);
       } else {
         setUser(null);
@@ -73,9 +80,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const isAdmin = roles.includes("admin");
+  const hasAdminAccess = roles.some((r) => ADMIN_ACCESS_ROLES.includes(r));
 
   return (
-    <AuthContext.Provider value={{ user, profile, roles, isAdmin, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, roles, isAdmin, hasAdminAccess, loading, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

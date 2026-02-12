@@ -12,7 +12,7 @@ import { Navigate } from "react-router-dom";
 import { Filter } from "lucide-react";
 
 const Index = () => {
-  const { user, loading, isAdmin, roles } = useAuth();
+  const { user, loading, hasAdminAccess, roles } = useAuth();
   const [leads, setLeads] = useState<Lead[]>(mockLeads);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
@@ -28,7 +28,7 @@ const Index = () => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  const currentRole = isAdmin ? "admin" : roles[0] || "doctor";
+  const currentRole = roles[0] || "doctor";
 
   const filteredLeads =
     statusFilter === "All"
@@ -56,11 +56,23 @@ const Index = () => {
     setLeads((prev) => [newLead, ...prev]);
   };
 
+  const handleUpdateLeadStatus = (leadId: string, newStatus: LeadStatus) => {
+    setLeads((prev) =>
+      prev.map((l) =>
+        l.id === leadId ? { ...l, status: newStatus, updatedAt: new Date().toLocaleDateString() } : l
+      )
+    );
+    if (selectedLead?.id === leadId) {
+      setSelectedLead((prev) => prev ? { ...prev, status: newStatus, updatedAt: new Date().toLocaleDateString() } : null);
+    }
+  };
+
   const allStatuses: (LeadStatus | "All")[] = [
     "All", "Pending", "Open", "Auth", "Approved", "Delivered", "Closed", "Denied (SNS)", "Denied (Auth)",
   ];
 
-  const canSubmit = currentRole === "doctor" || currentRole === "admin";
+  // Roles with admin access cannot submit leads; only doctor/logistics can
+  const canSubmit = !hasAdminAccess;
 
   return (
     <div className="min-h-screen bg-background">
@@ -107,7 +119,13 @@ const Index = () => {
         )}
       </main>
 
-      <PatientDrawer lead={selectedLead} onClose={() => setSelectedLead(null)} currentRole={currentRole as any} />
+      <PatientDrawer
+        lead={selectedLead}
+        onClose={() => setSelectedLead(null)}
+        currentRole={currentRole as any}
+        canUpdateStatus={hasAdminAccess}
+        onUpdateStatus={handleUpdateLeadStatus}
+      />
       <SubmitLeadModal isOpen={isSubmitOpen} onClose={() => setIsSubmitOpen(false)} onSubmit={handleSubmitLead} />
     </div>
   );

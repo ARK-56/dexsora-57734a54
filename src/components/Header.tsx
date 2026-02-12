@@ -1,14 +1,15 @@
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationPopup } from "./NotificationPopup";
-import { Search, LogOut, Settings } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
+import { Search, LogOut, Settings, UserCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export const Header = () => {
-  const { profile, isAdmin, signOut } = useAuth();
+  const { profile, hasAdminAccess, signOut } = useAuth();
 
   const initials = profile?.full_name
-    ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    ? profile.full_name.split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : profile?.email?.[0]?.toUpperCase() || "?";
 
   return (
@@ -31,7 +32,7 @@ export const Header = () => {
             />
           </div>
 
-          {isAdmin && (
+          {hasAdminAccess && (
             <Link
               to="/admin"
               className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
@@ -41,11 +42,16 @@ export const Header = () => {
             </Link>
           )}
 
+          <ThemeToggle />
           <NotificationPopup />
 
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+          <Link
+            to="/profile"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground"
+            title="My Profile"
+          >
             {initials}
-          </div>
+          </Link>
 
           <button
             onClick={signOut}
