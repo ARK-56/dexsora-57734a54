@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Lead, LeadStatus, UserRole } from "@/types/lead";
+import { Lead, LeadStatus } from "@/types/lead";
 import { mockLeads } from "@/data/mockLeads";
 import { Header } from "@/components/Header";
 import { StatsBar } from "@/components/StatsBar";
@@ -7,14 +7,28 @@ import { PatientTable } from "@/components/PatientTable";
 import { PatientDrawer } from "@/components/PatientDrawer";
 import { SubmitLeadModal } from "@/components/SubmitLeadModal";
 import { LifecycleBar } from "@/components/LifecycleBar";
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import { Filter } from "lucide-react";
 
 const Index = () => {
-  const [currentRole, setCurrentRole] = useState<UserRole>("admin");
+  const { user, loading, isAdmin, roles } = useAuth();
   const [leads, setLeads] = useState<Lead[]>(mockLeads);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "All">("All");
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" replace />;
+
+  const currentRole = isAdmin ? "admin" : roles[0] || "doctor";
 
   const filteredLeads =
     statusFilter === "All"
@@ -43,29 +57,19 @@ const Index = () => {
   };
 
   const allStatuses: (LeadStatus | "All")[] = [
-    "All",
-    "Pending",
-    "Open",
-    "Auth",
-    "Approved",
-    "Delivered",
-    "Closed",
-    "Denied (SNS)",
-    "Denied (Auth)",
+    "All", "Pending", "Open", "Auth", "Approved", "Delivered", "Closed", "Denied (SNS)", "Denied (Auth)",
   ];
+
+  const canSubmit = currentRole === "doctor" || currentRole === "admin";
 
   return (
     <div className="min-h-screen bg-background">
-      <Header currentRole={currentRole} onRoleChange={setCurrentRole} />
+      <Header />
 
       <main className="mx-auto max-w-7xl px-4 py-6 lg:px-6 space-y-6">
-        {/* Lifecycle overview */}
         <LifecycleBar />
-
-        {/* Stats */}
         <StatsBar leads={leads} />
 
-        {/* Toolbar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -84,7 +88,7 @@ const Index = () => {
             ))}
           </div>
 
-          {(currentRole === "doctor" || currentRole === "admin") && (
+          {canSubmit && (
             <button
               onClick={() => setIsSubmitOpen(true)}
               className="shrink-0 rounded-xl bg-success px-5 py-2.5 text-sm font-semibold text-success-foreground shadow-sm transition-all hover:opacity-90"
@@ -94,7 +98,6 @@ const Index = () => {
           )}
         </div>
 
-        {/* Table */}
         <PatientTable leads={filteredLeads} onSelectLead={setSelectedLead} />
 
         {filteredLeads.length === 0 && (
@@ -104,10 +107,7 @@ const Index = () => {
         )}
       </main>
 
-      {/* Side Drawer */}
-      <PatientDrawer lead={selectedLead} onClose={() => setSelectedLead(null)} currentRole={currentRole} />
-
-      {/* Submit Modal */}
+      <PatientDrawer lead={selectedLead} onClose={() => setSelectedLead(null)} currentRole={currentRole as any} />
       <SubmitLeadModal isOpen={isSubmitOpen} onClose={() => setIsSubmitOpen(false)} onSubmit={handleSubmitLead} />
     </div>
   );
