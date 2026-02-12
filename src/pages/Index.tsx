@@ -92,16 +92,16 @@ const Index = () => {
         <StatsBar leads={leads} />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <Filter className="h-4 w-4 text-muted-foreground shrink-0 mr-1" />
             {allStatuses.map((s) => (
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition-all ${
                   statusFilter === s
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-muted-foreground hover:bg-muted"
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted hover:border-muted-foreground/30"
                 }`}
               >
                 {s}
@@ -110,10 +110,10 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {selectedIds.length > 0 && hasAdminAccess && (
+            {selectedIds.length > 0 && (
               <button
                 onClick={handleDeleteSelected}
-                className="flex items-center gap-1.5 shrink-0 rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground shadow-sm transition-all hover:opacity-90"
+                className="flex items-center gap-1.5 shrink-0 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm transition-all hover:opacity-90"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete ({selectedIds.length})
@@ -122,9 +122,9 @@ const Index = () => {
             {canSubmit && (
               <button
                 onClick={() => setIsSubmitOpen(true)}
-                className="shrink-0 rounded-xl bg-success px-5 py-2.5 text-sm font-semibold text-success-foreground shadow-sm transition-all hover:opacity-90"
+                className="shrink-0 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90"
               >
-                Submit New Lead
+                + New Lead
               </button>
             )}
           </div>
