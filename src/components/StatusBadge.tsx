@@ -1,15 +1,15 @@
 import { LeadStatus } from "@/types/lead";
 import { cn } from "@/lib/utils";
 
-const statusConfig: Record<LeadStatus, { className: string; icon: string }> = {
-  Pending: { className: "bg-warning/15 text-warning border-warning/30", icon: "📋" },
-  Open: { className: "bg-primary/10 text-primary border-primary/30", icon: "🔍" },
-  Auth: { className: "bg-accent text-accent-foreground border-primary/30", icon: "📄" },
-  Approved: { className: "bg-success/15 text-success border-success/30", icon: "✅" },
-  Delivered: { className: "bg-success/20 text-success border-success/40", icon: "📦" },
-  Closed: { className: "bg-muted text-muted-foreground border-border", icon: "📁" },
-  "Denied (SNS)": { className: "bg-destructive/10 text-destructive border-destructive/30", icon: "⛔" },
-  "Denied (Auth)": { className: "bg-destructive/10 text-destructive border-destructive/30", icon: "⛔" },
+const statusConfig: Record<LeadStatus, { bg: string; text: string; label: string }> = {
+  Pending: { bg: "bg-warning", text: "text-warning-foreground", label: "PENDING" },
+  Open: { bg: "bg-primary", text: "text-primary-foreground", label: "OPEN" },
+  Auth: { bg: "bg-primary", text: "text-primary-foreground", label: "AUTH" },
+  Approved: { bg: "bg-success", text: "text-success-foreground", label: "APPROVED" },
+  Delivered: { bg: "bg-success", text: "text-success-foreground", label: "DELIVERED" },
+  Closed: { bg: "bg-muted", text: "text-muted-foreground", label: "CLOSED" },
+  "Denied (SNS)": { bg: "bg-destructive", text: "text-destructive-foreground", label: "DENIED" },
+  "Denied (Auth)": { bg: "bg-destructive", text: "text-destructive-foreground", label: "DENIED" },
 };
 
 export const StatusBadge = ({ status }: { status: LeadStatus }) => {
@@ -17,12 +17,12 @@ export const StatusBadge = ({ status }: { status: LeadStatus }) => {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold",
-        config.className
+        "inline-block rounded px-3 py-1 text-xs font-bold text-center min-w-[80px]",
+        config.bg,
+        config.text
       )}
     >
-      <span>{config.icon}</span>
-      {status}
+      {config.label}
     </span>
   );
 };

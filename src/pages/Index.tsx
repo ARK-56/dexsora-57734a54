@@ -44,7 +44,7 @@ const Index = () => {
     medicareId: string;
     ppoId: string;
     dmeItems: string;
-    documentName: string;
+    documents: { name: string; url: string }[];
   }) => {
     const newLead: Lead = {
       id: `A${100 + leads.length + 1}`,
@@ -58,9 +58,14 @@ const Index = () => {
       dmeItems: data.dmeItems || undefined,
       status: "Pending",
       notes: [],
-      documents: data.documentName
-        ? [{ id: `d${Date.now()}`, name: data.documentName, type: "Uploaded", uploadedBy: "Submitter", uploadedAt: new Date().toLocaleDateString() }]
-        : [],
+      documents: data.documents.map((d, i) => ({
+        id: `d${Date.now()}-${i}`,
+        name: d.name,
+        type: "Uploaded",
+        uploadedBy: "Submitter",
+        uploadedAt: new Date().toLocaleDateString(),
+        url: d.url,
+      })),
       createdAt: new Date().toLocaleDateString(),
       updatedAt: new Date().toLocaleDateString(),
     };
