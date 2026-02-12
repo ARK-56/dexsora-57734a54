@@ -1,26 +1,32 @@
-import { Lead, UserRole } from "@/types/lead";
+import { Lead, LeadStatus, UserRole } from "@/types/lead";
 import { StatusBadge } from "./StatusBadge";
 import { X, User, MapPin, Phone, Mail, FileText, MessageSquare, Calendar } from "lucide-react";
+import { useState } from "react";
 
 interface PatientDrawerProps {
   lead: Lead | null;
   onClose: () => void;
   currentRole: UserRole;
+  canUpdateStatus?: boolean;
+  onUpdateStatus?: (leadId: string, newStatus: LeadStatus) => void;
 }
 
-export const PatientDrawer = ({ lead, onClose, currentRole }: PatientDrawerProps) => {
+const ALL_STATUSES: LeadStatus[] = [
+  "Pending", "Open", "Auth", "Approved", "Delivered", "Closed", "Denied (SNS)", "Denied (Auth)",
+];
+
+export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onUpdateStatus }: PatientDrawerProps) => {
+  const [editingStatus, setEditingStatus] = useState(false);
+
   if (!lead) return null;
 
   const showInternalNotes = currentRole !== "doctor";
-
   const visibleNotes = lead.notes.filter((n) => (showInternalNotes ? true : !n.isInternal));
 
   return (
     <>
-      {/* Overlay */}
       <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Drawer */}
       <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-border bg-card shadow-2xl animate-fade-in overflow-y-auto">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-5 py-4">
           <div className="flex items-center gap-3">
@@ -32,10 +38,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole }: PatientDrawerProps
               <p className="text-xs text-muted-foreground">Lead #{lead.id}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-muted"
-          >
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-muted">
             <X className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
@@ -44,8 +47,35 @@ export const PatientDrawer = ({ lead, onClose, currentRole }: PatientDrawerProps
           {/* Status */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted-foreground">Status</span>
-            <StatusBadge status={lead.status} />
+            <div className="flex items-center gap-2">
+              <StatusBadge status={lead.status} />
+              {canUpdateStatus && (
+                <button
+                  onClick={() => setEditingStatus(!editingStatus)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {editingStatus ? "Cancel" : "Change"}
+                </button>
+              )}
+            </div>
           </div>
+
+          {editingStatus && canUpdateStatus && onUpdateStatus && (
+            <div className="flex flex-wrap gap-1.5">
+              {ALL_STATUSES.filter((s) => s !== lead.status).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    onUpdateStatus(lead.id, s);
+                    setEditingStatus(false);
+                  }}
+                  className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
 
           {lead.denialReason && (
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
