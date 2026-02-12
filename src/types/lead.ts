@@ -24,6 +24,7 @@ export interface Document {
   type: string;
   uploadedBy: string;
   uploadedAt: string;
+  url?: string;
 }
 
 export interface Lead {
