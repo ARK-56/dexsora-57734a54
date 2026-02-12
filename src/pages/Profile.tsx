@@ -1,23 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
   const { toast } = useToast();
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || "");
-      setEmail(profile.email || "");
+    if (profile && (profile as any).avatar_url) {
+      setAvatarUrl((profile as any).avatar_url);
     }
   }, [profile]);
 
@@ -31,24 +30,47 @@ const Profile = () => {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  const fullName = profile?.full_name || "";
+  const email = profile?.email || "";
+
   const initials = fullName
     ? fullName.split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : email?.[0]?.toUpperCase() || "?";
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    const { error } = await supabase
+  const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploading(true);
+    const fileExt = file.name.split(".").pop();
+    const filePath = `${user.id}/avatar.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      toast({ title: "Error", description: uploadError.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    const newUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+    const { error: updateError } = await supabase
       .from("profiles")
-      .update({ full_name: fullName, email })
+      .update({ avatar_url: newUrl })
       .eq("user_id", user.id);
 
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    if (updateError) {
+      toast({ title: "Error", description: updateError.message, variant: "destructive" });
     } else {
-      toast({ title: "Profile updated", description: "Your profile has been saved." });
+      setAvatarUrl(newUrl);
+      await refreshProfile();
+      toast({ title: "Avatar updated", description: "Your profile picture has been saved." });
     }
-    setSaving(false);
+    setUploading(false);
   };
 
   return (
@@ -61,46 +83,44 @@ const Profile = () => {
           </Link>
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground">My Profile</h1>
-            <p className="text-sm text-muted-foreground">Update your personal information</p>
+            <p className="text-sm text-muted-foreground">Manage your profile picture</p>
           </div>
         </div>
 
         <div className="flex justify-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">
-            {initials}
+          <div className="relative group">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="h-24 w-24 rounded-full object-cover border-2 border-border" />
+            ) : (
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-primary-foreground">
+                {initials}
+              </div>
+            )}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <Camera className="h-6 w-6 text-primary-foreground" />
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUploadAvatar} className="hidden" />
           </div>
         </div>
 
-        <form onSubmit={handleSave} className="rounded-2xl border border-border bg-card p-6 space-y-4">
+        {uploading && (
+          <p className="text-center text-sm text-muted-foreground">Uploading...</p>
+        )}
+
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Full Name</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
-              placeholder="John Doe"
-            />
+            <p className="h-10 flex items-center rounded-lg border border-input bg-muted px-3 text-sm text-foreground">{fullName || "—"}</p>
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
-              placeholder="you@company.com"
-            />
+            <p className="h-10 flex items-center rounded-lg border border-input bg-muted px-3 text-sm text-foreground">{email || "—"}</p>
           </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            <Save className="h-4 w-4" />
-            {saving ? "Saving..." : "Save Profile"}
-          </button>
-        </form>
+        </div>
       </main>
     </div>
   );

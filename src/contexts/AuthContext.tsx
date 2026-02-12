@@ -9,7 +9,7 @@ const ADMIN_ACCESS_ROLES: AppRole[] = ["admin", "eligibility", "auth_team"];
 
 interface AuthContextType {
   user: User | null;
-  profile: { full_name: string | null; email: string | null } | null;
+  profile: { full_name: string | null; email: string | null; avatar_url: string | null } | null;
   roles: AppRole[];
   isAdmin: boolean;
   hasAdminAccess: boolean;
@@ -29,13 +29,13 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<{ full_name: string | null; email: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ full_name: string | null; email: string | null; avatar_url: string | null } | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async (userId: string) => {
     const [profileRes, rolesRes] = await Promise.all([
-      supabase.from("profiles").select("full_name, email").eq("user_id", userId).maybeSingle(),
+      supabase.from("profiles").select("full_name, email, avatar_url").eq("user_id", userId).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
     if (profileRes.data) setProfile(profileRes.data);

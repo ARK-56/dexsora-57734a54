@@ -47,10 +47,14 @@ export const Header = () => {
 
           <Link
             to="/profile"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground overflow-hidden"
             title="My Profile"
           >
-            {initials}
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+            ) : (
+              initials
+            )}
           </Link>
 
           <button

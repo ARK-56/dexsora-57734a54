@@ -52,7 +52,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Patient Name" value={form.patientName} onChange={set("patientName")} required />
-              <Field label="Date of Birth" value={form.dob} onChange={set("dob")} placeholder="MM/DD/YYYY" required />
+              <Field label="Date of Birth" value={form.dob} onChange={set("dob")} placeholder="MM/DD/YYYY" required type="date" />
               <Field label="Phone" value={form.phone} onChange={set("phone")} />
               <Field label="Email" value={form.email} onChange={set("email")} type="email" />
               <Field label="Medicare ID" value={form.medicareId} onChange={set("medicareId")} required />
@@ -64,7 +64,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                 Cancel
               </button>
               <button type="submit" className="rounded-lg bg-success px-6 py-2.5 text-sm font-semibold text-success-foreground shadow-sm transition-all hover:opacity-90">
-                ➕ Submit Lead
+                Submit Lead
               </button>
             </div>
           </form>
