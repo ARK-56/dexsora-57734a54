@@ -90,7 +90,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Patient Name" value={form.patientName} onChange={set("patientName")} required />
-              <Field label="Date of Birth" value={form.dob} onChange={set("dob")} type="date" required />
+              <Field label="Date of Birth" value={form.dob} onChange={set("dob")} placeholder="MM/DD/YYYY" required />
               <Field label="Phone" value={form.phone} onChange={set("phone")} />
               <Field label="Email" value={form.email} onChange={set("email")} type="email" />
               <Field label="Medicare ID" value={form.medicareId} onChange={set("medicareId")} required />
