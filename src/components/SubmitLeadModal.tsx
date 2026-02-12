@@ -12,6 +12,8 @@ interface SubmitLeadModalProps {
     address: string;
     medicareId: string;
     ppoId: string;
+    dmeItems: string;
+    documentName: string;
   }) => void;
 }
 
@@ -24,14 +26,16 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     address: "",
     medicareId: "",
     ppoId: "",
+    dmeItems: "",
+    documentName: "",
   });
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
-    setForm({ patientName: "", dob: "", phone: "", email: "", address: "", medicareId: "", ppoId: "" });
+    onSubmit({ ...form });
+    setForm({ patientName: "", dob: "", phone: "", email: "", address: "", medicareId: "", ppoId: "", dmeItems: "", documentName: "" });
     onClose();
   };
 
@@ -52,11 +56,13 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Patient Name" value={form.patientName} onChange={set("patientName")} required />
-              <Field label="Date of Birth" value={form.dob} onChange={set("dob")} placeholder="MM/DD/YYYY" required type="date" />
+              <Field label="Date of Birth" value={form.dob} onChange={set("dob")} type="date" required />
               <Field label="Phone" value={form.phone} onChange={set("phone")} />
               <Field label="Email" value={form.email} onChange={set("email")} type="email" />
               <Field label="Medicare ID" value={form.medicareId} onChange={set("medicareId")} required />
               <Field label="PPO ID" value={form.ppoId} onChange={set("ppoId")} />
+              <Field label="DME Items" value={form.dmeItems} onChange={set("dmeItems")} placeholder="e.g. BT Wrist" />
+              <Field label="Document Name" value={form.documentName} onChange={set("documentName")} placeholder="e.g. Insurance_card.pdf" />
             </div>
             <Field label="Full Address" value={form.address} onChange={set("address")} required />
             <div className="flex justify-end gap-3 pt-2">
