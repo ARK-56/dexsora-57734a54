@@ -3,9 +3,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil } from "lucide-react";
+import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useLeads } from "@/hooks/useLeads";
+import { StatusBadge } from "@/components/StatusBadge";
+import { LeadStatus } from "@/types/lead";
 
 interface ProfileRow {
   user_id: string;
@@ -27,6 +30,7 @@ const formatRole = (role: string) =>
 const AdminPanel = () => {
   const { hasAdminAccess, isAdmin, loading } = useAuth();
   const { toast } = useToast();
+  const { leads, loading: leadsLoading, updateLeadStatus } = useLeads();
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<RoleRow[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -36,6 +40,7 @@ const AdminPanel = () => {
   const [editUser, setEditUser] = useState<ProfileRow | null>(null);
   const [editForm, setEditForm] = useState({ fullName: "", email: "", role: "" });
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<"users" | "leads">("leads");
 
   const fetchData = async () => {
     const [profilesRes, rolesRes] = await Promise.all([
@@ -133,11 +138,19 @@ const AdminPanel = () => {
     setSaving(false);
   };
 
+  const handleUpdateLeadStatus = async (leadId: string, newStatus: string) => {
+    await updateLeadStatus(leadId, newStatus);
+  };
+
+  const ALL_STATUSES: LeadStatus[] = [
+    "Pending", "Open", "Auth", "Approved", "Delivered", "Closed", "Denied (SNS)", "Denied (Auth)",
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="mx-auto max-w-5xl px-4 py-6 lg:px-6 space-y-6">
+      <main className="mx-auto max-w-6xl px-4 py-6 lg:px-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
@@ -145,10 +158,10 @@ const AdminPanel = () => {
             </Link>
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground">Admin Panel</h1>
-              <p className="text-sm text-muted-foreground">Manage users, roles, and system settings</p>
+              <p className="text-sm text-muted-foreground">Manage users, roles, and leads</p>
             </div>
           </div>
-          {isAdmin && (
+          {isAdmin && activeTab === "users" && (
             <button
               onClick={() => setShowAddUser(true)}
               className="flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
@@ -172,6 +185,15 @@ const AdminPanel = () => {
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold font-display text-foreground">{leads.length}</p>
+              <p className="text-xs text-muted-foreground">Total Leads</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
               <Shield className="h-5 w-5" />
             </div>
             <div>
@@ -181,76 +203,145 @@ const AdminPanel = () => {
               <p className="text-xs text-muted-foreground">Admins</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
-              <Bell className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold font-display text-foreground">{roles.length}</p>
-              <p className="text-xs text-muted-foreground">Role Assignments</p>
-            </div>
-          </div>
         </div>
 
-        {/* Users Table */}
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="border-b border-border bg-muted/50 px-5 py-3">
-            <h2 className="font-display text-sm font-bold text-foreground">Users</h2>
-          </div>
-          {loadingData ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
-            </div>
-          ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Roles</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Joined</th>
-                  {isAdmin && <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {profiles.map((p) => (
-                  <tr key={p.user_id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <p className="text-sm font-semibold text-foreground">{p.full_name || "—"}</p>
-                      <p className="text-xs text-muted-foreground">{p.email}</p>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex flex-wrap gap-1.5">
-                        {getUserRoles(p.user_id).length > 0 ? (
-                          getUserRoles(p.user_id).map((role) => (
-                            <span key={role} className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                              {formatRole(role)}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">No roles</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-muted-foreground">
-                      {new Date(p.created_at).toLocaleDateString()}
-                    </td>
-                    {isAdmin && (
-                      <td className="px-5 py-3.5 text-right">
-                        <button
-                          onClick={() => openEditUser(p)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
-                          title="Edit user"
-                        >
-                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-border">
+          <button
+            onClick={() => setActiveTab("leads")}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === "leads" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Leads ({leads.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === "users" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Users ({profiles.length})
+          </button>
         </div>
+
+        {/* Leads Tab */}
+        {activeTab === "leads" && (
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            {leadsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+              </div>
+            ) : leads.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">No leads yet.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Patient</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">DME Items</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Docs</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Submitted</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.map((lead, idx) => (
+                      <tr key={lead.id} className={`border-b border-border transition-colors hover:bg-muted/30 ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
+                        <td className="px-4 py-3">
+                          <p className="text-sm font-semibold text-foreground">{lead.patient_name}</p>
+                          <p className="text-xs text-muted-foreground">{lead.medicare_id}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={lead.status as LeadStatus} />
+                        </td>
+                        <td className="px-4 py-3 text-sm text-foreground">{lead.dme_items || "—"}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {lead.documents.length > 0 ? `${lead.documents.length} file(s)` : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={lead.status}
+                            onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value)}
+                            className="h-8 rounded-lg border border-input bg-background px-2 text-xs text-foreground outline-none focus:border-primary"
+                          >
+                            {ALL_STATUSES.map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Users Tab */}
+        {activeTab === "users" && (
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            {loadingData ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Roles</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Joined</th>
+                    {isAdmin && <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {profiles.map((p) => (
+                    <tr key={p.user_id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <p className="text-sm font-semibold text-foreground">{p.full_name || "—"}</p>
+                        <p className="text-xs text-muted-foreground">{p.email}</p>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex flex-wrap gap-1.5">
+                          {getUserRoles(p.user_id).length > 0 ? (
+                            getUserRoles(p.user_id).map((role) => (
+                              <span key={role} className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                                {formatRole(role)}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">No roles</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-sm text-muted-foreground">
+                        {new Date(p.created_at).toLocaleDateString()}
+                      </td>
+                      {isAdmin && (
+                        <td className="px-5 py-3.5 text-right">
+                          <button
+                            onClick={() => openEditUser(p)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
+                            title="Edit user"
+                          >
+                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Add User Modal */}

@@ -1,13 +1,19 @@
-import { Lead } from "@/types/lead";
+import { useState } from "react";
+import { DbLead } from "@/hooks/useLeads";
 import { StatusBadge } from "./StatusBadge";
-import { Star, Download } from "lucide-react";
+import { Star, Download, Trash2 } from "lucide-react";
+import { LeadStatus } from "@/types/lead";
 
 interface PatientTableProps {
-  leads: Lead[];
-  onSelectLead: (lead: Lead) => void;
+  leads: DbLead[];
+  onSelectLead: (lead: DbLead) => void;
+  selectedIds: string[];
+  onToggleSelect: (id: string) => void;
+  onToggleAll: () => void;
+  allSelected: boolean;
 }
 
-export const PatientTable = ({ leads, onSelectLead }: PatientTableProps) => {
+export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect, onToggleAll, allSelected }: PatientTableProps) => {
   return (
     <>
       {/* Desktop table — dense CRM/spreadsheet style */}
@@ -17,7 +23,12 @@ export const PatientTable = ({ leads, onSelectLead }: PatientTableProps) => {
             <thead>
               <tr className="border-b border-border bg-muted/60">
                 <th className="w-10 px-3 py-2.5 text-center">
-                  <input type="checkbox" className="h-3.5 w-3.5 accent-primary rounded" disabled />
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5 accent-primary rounded"
+                    checked={allSelected && leads.length > 0}
+                    onChange={onToggleAll}
+                  />
                 </th>
                 <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Deal</th>
                 <th className="w-20 px-3 py-2.5" />
@@ -36,13 +47,18 @@ export const PatientTable = ({ leads, onSelectLead }: PatientTableProps) => {
                   onClick={() => onSelectLead(lead)}
                   className={`cursor-pointer border-b border-border transition-colors hover:bg-primary/5 ${
                     idx % 2 === 1 ? "bg-muted/20" : ""
-                  }`}
+                  } ${selectedIds.includes(lead.id) ? "bg-primary/10" : ""}`}
                 >
                   <td className="px-3 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" className="h-3.5 w-3.5 accent-primary rounded" />
+                    <input
+                      type="checkbox"
+                      className="h-3.5 w-3.5 accent-primary rounded"
+                      checked={selectedIds.includes(lead.id)}
+                      onChange={() => onToggleSelect(lead.id)}
+                    />
                   </td>
                   <td className="px-3 py-2 font-medium text-foreground uppercase whitespace-nowrap max-w-[200px] truncate">
-                    {lead.patientName}
+                    {lead.patient_name}
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -51,21 +67,23 @@ export const PatientTable = ({ leads, onSelectLead }: PatientTableProps) => {
                     </div>
                   </td>
                   <td className="px-3 py-2">
-                    <StatusBadge status={lead.status} />
+                    <StatusBadge status={lead.status as LeadStatus} />
                   </td>
                   <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                    {lead.createdAt}
+                    {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </td>
                   <td className="px-3 py-2">
                     <SecondaryStatus status={lead.status} />
                   </td>
                   <td className="px-3 py-2 text-foreground whitespace-nowrap">
-                    {lead.dmeItems || "—"}
+                    {lead.dme_items || "—"}
                   </td>
                   <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                     {lead.documents.length > 0 ? `${lead.documents.length} file${lead.documents.length > 1 ? "s" : ""}` : "—"}
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{lead.updatedAt}</td>
+                  <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                    {new Date(lead.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -82,15 +100,24 @@ export const PatientTable = ({ leads, onSelectLead }: PatientTableProps) => {
             className="status-card-enter cursor-pointer rounded-xl border border-border bg-card p-4 transition-shadow active:shadow-md"
           >
             <div className="flex items-start justify-between mb-2">
-              <div>
-                <p className="font-semibold text-foreground">{lead.patientName}</p>
-                <p className="text-xs text-muted-foreground">DOB: {lead.dob}</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="h-3.5 w-3.5 accent-primary"
+                  checked={selectedIds.includes(lead.id)}
+                  onChange={(e) => { e.stopPropagation(); onToggleSelect(lead.id); }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <div>
+                  <p className="font-semibold text-foreground">{lead.patient_name}</p>
+                  <p className="text-xs text-muted-foreground">DOB: {lead.dob}</p>
+                </div>
               </div>
-              <StatusBadge status={lead.status} />
+              <StatusBadge status={lead.status as LeadStatus} />
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 border-t border-border pt-2">
-              <span>Submitted: {lead.createdAt}</span>
-              {lead.dmeItems && <span>{lead.dmeItems}</span>}
+              <span>Submitted: {new Date(lead.created_at).toLocaleDateString()}</span>
+              {lead.dme_items && <span>{lead.dme_items}</span>}
             </div>
           </div>
         ))}

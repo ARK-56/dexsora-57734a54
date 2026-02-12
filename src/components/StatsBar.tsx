@@ -1,8 +1,9 @@
-import { Lead, LeadStatus } from "@/types/lead";
+import { DbLead } from "@/hooks/useLeads";
+import { LeadStatus } from "@/types/lead";
 import { FileText, Clock, CheckCircle, Package, AlertTriangle } from "lucide-react";
 
 interface StatsBarProps {
-  leads: Lead[];
+  leads: DbLead[];
 }
 
 const statuses: { status: LeadStatus | "denied"; label: string; icon: React.ReactNode }[] = [
