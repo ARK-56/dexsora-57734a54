@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { downloadFile } from "@/lib/downloadFile";
+import { getSignedUrl } from "@/lib/signedUrl";
 
 interface Prescription {
   id: string;
   name: string;
-  url: string;
+  url: string; // file path stored in DB
+  signedUrl?: string; // resolved signed URL for display
   uploaded_by: string | null;
   created_at: string;
 }
@@ -32,7 +34,18 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
       .from("prescriptions")
       .select("*")
       .order("created_at", { ascending: false });
-    setPrescriptions((data as Prescription[]) || []);
+
+    const items = (data as Prescription[]) || [];
+
+    // Resolve signed URLs for all prescriptions
+    const resolved = await Promise.all(
+      items.map(async (p) => ({
+        ...p,
+        signedUrl: await getSignedUrl(p.url),
+      }))
+    );
+
+    setPrescriptions(resolved);
     setLoading(false);
   };
 
@@ -55,11 +68,10 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
         continue;
       }
 
-      const { data: urlData } = supabase.storage.from("lead-documents").getPublicUrl(filePath);
-
+      // Store the file path (not public URL)
       await supabase.from("prescriptions").insert({
         name: fileName || file.name,
-        url: urlData.publicUrl,
+        url: filePath,
         uploaded_by: user.id,
       });
     }
@@ -97,7 +109,6 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Admin upload */}
           {hasAdminAccess && (
             <div className="rounded-lg border border-border bg-muted/10 p-4 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Upload Prescription</h3>
@@ -119,7 +130,6 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
             </div>
           )}
 
-          {/* List */}
           <div className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Available Prescriptions ({prescriptions.length})
@@ -141,12 +151,16 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
                       <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
                       <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
                     </div>
-                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0" title="View">
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                    <button onClick={() => downloadFile(p.url, p.name)} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0" title="Download">
-                      <Download className="h-3.5 w-3.5" />
-                    </button>
+                    {p.signedUrl && (
+                      <>
+                        <a href={p.signedUrl} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0" title="View">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                        <button onClick={() => downloadFile(p.signedUrl!, p.name)} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0" title="Download">
+                          <Download className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    )}
                     {hasAdminAccess && (
                       <button onClick={() => handleDelete(p.id)} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0" title="Delete">
                         <Trash2 className="h-3.5 w-3.5" />

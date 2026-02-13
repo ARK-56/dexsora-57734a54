@@ -15,6 +15,9 @@ interface AuthContextType {
   hasAdminAccess: boolean;
   isDoctor: boolean;
   loading: boolean;
+  emailVerified: boolean;
+  fullyAuthenticated: boolean;
+  setEmailVerified: (v: boolean) => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -33,6 +36,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<{ full_name: string | null; email: string | null; avatar_url: string | null; npi: string | null } | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [emailVerified, setEmailVerifiedState] = useState(() => {
+    return sessionStorage.getItem("emailVerified") === "true";
+  });
+
+  const setEmailVerified = (v: boolean) => {
+    setEmailVerifiedState(v);
+    if (v) {
+      sessionStorage.setItem("emailVerified", "true");
+    } else {
+      sessionStorage.removeItem("emailVerified");
+    }
+  };
 
   const fetchUserData = async (userId: string) => {
     const [profileRes, rolesRes] = await Promise.all([
@@ -56,6 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setProfile(null);
         setRoles([]);
+        setEmailVerified(false);
       }
       setLoading(false);
     });
@@ -77,15 +93,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    setEmailVerified(false);
     await supabase.auth.signOut();
   };
 
   const isAdmin = roles.includes("admin");
   const hasAdminAccess = roles.some((r) => ADMIN_ACCESS_ROLES.includes(r));
   const isDoctor = roles.includes("doctor");
+  const fullyAuthenticated = !!user && emailVerified;
 
   return (
-    <AuthContext.Provider value={{ user, profile, roles, isAdmin, hasAdminAccess, isDoctor, loading, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, roles, isAdmin, hasAdminAccess, isDoctor, loading, emailVerified, fullyAuthenticated, setEmailVerified, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
