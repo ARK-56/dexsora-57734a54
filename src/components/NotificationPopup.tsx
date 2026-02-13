@@ -17,7 +17,7 @@ export const NotificationPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const fetchNotifications = () => {
     if (!user) return;
     supabase
       .from("notifications")
@@ -28,6 +28,19 @@ export const NotificationPopup = () => {
       .then(({ data }) => {
         if (data) setNotifications(data);
       });
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const channel = supabase
+      .channel("notifications-realtime")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, (payload: any) => {
+        if (payload.new?.user_id === user?.id) {
+          fetchNotifications();
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   useEffect(() => {
