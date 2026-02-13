@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
+import { Hexagon } from "lucide-react";
 
 
 const MAX_ATTEMPTS = 5;
@@ -60,7 +61,10 @@ const Login = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm animate-fade-in">
-        <div className="mb-8 text-center">
+        <div className="mb-8 text-center flex flex-col items-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Hexagon className="h-6 w-6" />
+          </div>
           <h1 className="font-display text-2xl font-bold text-foreground">Dexsora</h1>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your account</p>
         </div>
