@@ -133,15 +133,23 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {selectedIds.length > 0 && (
-              <button
-                onClick={() => setDeleteDialogOpen(true)}
-                className="flex items-center gap-1.5 shrink-0 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm transition-all hover:opacity-90"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete ({selectedIds.length})
-              </button>
-            )}
+            {selectedIds.length > 0 && (() => {
+              const allNewLead = selectedIds.every((id) => {
+                const lead = leads.find((l) => l.id === id);
+                return lead?.status === "New Lead";
+              });
+              return allNewLead ? (
+                <button
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="flex items-center gap-1.5 shrink-0 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm transition-all hover:opacity-90"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete ({selectedIds.length})
+                </button>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">Cannot delete leads that have been processed</span>
+              );
+            })()}
             <button
               onClick={() => setIsSubmitOpen(true)}
               className="shrink-0 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90"

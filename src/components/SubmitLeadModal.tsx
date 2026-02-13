@@ -47,6 +47,20 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     }
   };
 
+  const autoFormatDate = (value: string) => {
+    // Strip non-digits
+    const digits = value.replace(/\D/g, "");
+    let formatted = "";
+    if (digits.length <= 2) {
+      formatted = digits;
+    } else if (digits.length <= 4) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    } else {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+    }
+    return formatted;
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
@@ -139,7 +153,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     <>
       <div className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl animate-fade-in max-h-[90vh] flex flex-col">
+        <div className="w-full max-w-2xl rounded-xl border border-border bg-card shadow-2xl animate-fade-in max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
             <div>
@@ -171,16 +185,22 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                       type="text"
                       value={form.dob}
                       onChange={(e) => {
-                        setForm((p) => ({ ...p, dob: e.target.value }));
-                        // Try to parse typed date
-                        const parsed = new Date(e.target.value);
-                        if (!isNaN(parsed.getTime()) && parsed < new Date()) {
-                          setDobDate(parsed);
+                        const formatted = autoFormatDate(e.target.value);
+                        setForm((p) => ({ ...p, dob: formatted }));
+                        // Try to parse when complete (MM/DD/YYYY = 10 chars)
+                        if (formatted.length === 10) {
+                          const parsed = new Date(formatted);
+                          if (!isNaN(parsed.getTime()) && parsed < new Date()) {
+                            setDobDate(parsed);
+                          } else {
+                            setDobDate(undefined);
+                          }
                         } else {
                           setDobDate(undefined);
                         }
                       }}
                       placeholder="MM/DD/YYYY"
+                      maxLength={10}
                       required
                       className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/60"
                     />
