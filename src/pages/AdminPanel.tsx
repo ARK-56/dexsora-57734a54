@@ -76,6 +76,16 @@ const AdminPanel = () => {
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
   const [selectedLead, setSelectedLead] = useState<DbLead | null>(null);
+  const [unreadNotesCount, setUnreadNotesCount] = useState(0);
+
+  const fetchUnreadNotes = async () => {
+    const { count } = await supabase
+      .from("lead_notes")
+      .select("id", { count: "exact", head: true })
+      .eq("is_read", false)
+      .eq("is_internal", false);
+    setUnreadNotesCount(count || 0);
+  };
 
   const fetchData = async () => {
     const [profilesRes, rolesRes] = await Promise.all([
@@ -90,6 +100,12 @@ const AdminPanel = () => {
   useEffect(() => {
     if (!hasAdminAccess) return;
     fetchData();
+    fetchUnreadNotes();
+    const ch = supabase
+      .channel("admin-notes-unread")
+      .on("postgres_changes", { event: "*", schema: "public", table: "lead_notes" }, () => fetchUnreadNotes())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, [hasAdminAccess]);
 
   if (loading) {
@@ -317,11 +333,16 @@ const AdminPanel = () => {
         <div className="flex gap-1 border-b border-border">
           <button
             onClick={() => setActiveTab("leads")}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`relative px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
               activeTab === "leads" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             Leads ({leads.length})
+            {unreadNotesCount > 0 && (
+              <span className="ml-1.5 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                {unreadNotesCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab("users")}
