@@ -1,14 +1,15 @@
 import { LeadStatus } from "@/types/lead";
-import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 
 const steps: { status: LeadStatus; label: string; icon: string }[] = [
-  { status: "Pending", label: "Pending", icon: "📋" },
-  { status: "Open", label: "Open (SNS)", icon: "🔍" },
-  { status: "Auth", label: "Auth", icon: "📄" },
-  { status: "Approved", label: "Approved", icon: "✅" },
-  { status: "Delivered", label: "Delivered", icon: "📦" },
-  { status: "Closed", label: "Closed", icon: "📁" },
+  { status: "New Lead", label: "New Lead", icon: "🆕" },
+  { status: "Pending", label: "Pending", icon: "⏳" },
+  { status: "Eligible", label: "Eligible", icon: "✅" },
+  { status: "Shipped", label: "Shipped", icon: "📦" },
+  { status: "Delivered", label: "Delivered", icon: "🏠" },
+  { status: "Auth Applied", label: "Auth Applied", icon: "📄" },
+  { status: "Billed", label: "Billed", icon: "💰" },
+  { status: "Paid", label: "Paid", icon: "✅" },
 ];
 
 export const LifecycleBar = () => {

@@ -58,11 +58,44 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (action === "create_doctor") {
+      const { email, password, fullName, npi } = payload;
+      if (!email || !password || !fullName || !npi) throw new Error("Missing required fields");
+
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName },
+      });
+
+      if (createError) throw createError;
+
+      // Assign doctor role
+      const { error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: newUser.user.id, role: "doctor" });
+
+      if (roleError) throw roleError;
+
+      // Update profile with NPI
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .update({ npi })
+        .eq("user_id", newUser.user.id);
+
+      if (profileError) throw profileError;
+
+      return new Response(
+        JSON.stringify({ message: "Doctor created", userId: newUser.user.id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "update") {
       const { userId, fullName, email, role } = payload;
       if (!userId) throw new Error("Missing userId");
 
-      // Update profile
       if (fullName !== undefined || email !== undefined) {
         const updates: any = {};
         if (fullName !== undefined) updates.full_name = fullName;
@@ -76,9 +109,7 @@ Deno.serve(async (req) => {
         if (profileError) throw profileError;
       }
 
-      // Update role if provided
       if (role) {
-        // Delete existing roles and insert new one
         await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
         const { error: roleError } = await supabaseAdmin
           .from("user_roles")

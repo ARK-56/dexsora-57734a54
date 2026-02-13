@@ -15,11 +15,9 @@ interface SubmitLeadModalProps {
     patientName: string;
     dob: string;
     phone: string;
-    email: string;
     address: string;
-    medicareId: string;
-    ppoId: string;
-    dmeItems: string;
+    item: string;
+    diagnosis: string;
     documents: { name: string; url: string }[];
   }) => void;
 }
@@ -30,11 +28,9 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     patientName: "",
     dob: "",
     phone: "",
-    email: "",
     address: "",
-    medicareId: "",
-    ppoId: "",
-    dmeItems: "",
+    item: "",
+    diagnosis: "",
   });
   const [dobDate, setDobDate] = useState<Date | undefined>();
   const [files, setFiles] = useState<File[]>([]);
@@ -73,8 +69,6 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
       const file = files[i];
       const filePath = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
       
-      console.log(`Uploading file: ${file.name}, size: ${file.size}, type: ${file.type}`);
-      
       const { data, error } = await supabase.storage
         .from("lead-documents")
         .upload(filePath, file, {
@@ -83,14 +77,12 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
         });
 
       if (error) {
-        console.error("Upload error:", error);
         toast({
           title: "Upload failed",
           description: `Failed to upload ${file.name}: ${error.message}`,
           variant: "destructive",
         });
       } else {
-        console.log("Upload success:", data);
         const { data: urlData } = supabase.storage
           .from("lead-documents")
           .getPublicUrl(filePath);
@@ -101,7 +93,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     }
 
     onSubmit({ ...form, documents: uploadedDocs });
-    setForm({ patientName: "", dob: "", phone: "", email: "", address: "", medicareId: "", ppoId: "", dmeItems: "" });
+    setForm({ patientName: "", dob: "", phone: "", address: "", item: "", diagnosis: "" });
     setDobDate(undefined);
     setFiles([]);
     setUploading(false);
@@ -127,7 +119,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
           <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
             <div>
               <h2 className="font-display text-lg font-bold text-foreground">Submit New Lead</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Fill in patient details below</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Fill in patient and product details</p>
             </div>
             <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-muted">
               <X className="h-4 w-4 text-muted-foreground" />
@@ -136,15 +128,15 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
-            {/* Section: Patient */}
+            {/* Section: Patient Information */}
             <div className="space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <span className="h-px flex-1 bg-border" />
-                Patient Details
+                Patient Information
                 <span className="h-px flex-1 bg-border" />
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Patient Name" value={form.patientName} onChange={set("patientName")} required />
+                <Field label="Name" value={form.patientName} onChange={set("patientName")} required placeholder="Patient full name" />
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                     Date of Birth <span className="text-destructive">*</span>
@@ -176,24 +168,24 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                   </Popover>
                   <input type="hidden" name="dob" value={form.dob} required />
                 </div>
-                <Field label="Phone" value={form.phone} onChange={set("phone")} placeholder="(555) 000-0000" />
-                <Field label="Email" value={form.email} onChange={set("email")} type="email" placeholder="patient@email.com" />
+                <Field label="Phone No" value={form.phone} onChange={set("phone")} required placeholder="(555) 000-0000" />
+                <div className="col-span-2">
+                  <Field label="Address" value={form.address} onChange={set("address")} required placeholder="123 Main St, City, State ZIP" />
+                </div>
               </div>
-              <Field label="Full Address" value={form.address} onChange={set("address")} required placeholder="123 Main St, City, State ZIP" />
             </div>
 
-            {/* Section: Insurance & DME */}
+            {/* Section: Product */}
             <div className="space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <span className="h-px flex-1 bg-border" />
-                Insurance & Equipment
+                Product
                 <span className="h-px flex-1 bg-border" />
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Medicare ID" value={form.medicareId} onChange={set("medicareId")} required />
-                <Field label="PPO ID" value={form.ppoId} onChange={set("ppoId")} />
+                <Field label="Item" value={form.item} onChange={set("item")} required placeholder="e.g. Knee Brace" />
+                <Field label="Diagnosis" value={form.diagnosis} onChange={set("diagnosis")} required placeholder="e.g. M17.11" />
               </div>
-              <Field label="DME Items" value={form.dmeItems} onChange={set("dmeItems")} placeholder="e.g. BT Wrist, Knee Brace" />
             </div>
 
             {/* Section: Documents */}
@@ -270,7 +262,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
               </Button>
               <Button
                 type="submit"
-                disabled={uploading || !form.patientName || !form.dob || !form.medicareId || !form.address}
+                disabled={uploading || !form.patientName || !form.dob || !form.phone || !form.address || !form.item || !form.diagnosis}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-[120px]"
               >
                 {uploading ? (

@@ -2,18 +2,21 @@ import { LeadStatus } from "@/types/lead";
 import { cn } from "@/lib/utils";
 
 const statusConfig: Record<LeadStatus, { bg: string; text: string; label: string }> = {
+  "New Lead": { bg: "bg-primary", text: "text-primary-foreground", label: "NEW LEAD" },
   Pending: { bg: "bg-warning", text: "text-warning-foreground", label: "PENDING" },
-  Open: { bg: "bg-primary", text: "text-primary-foreground", label: "OPEN" },
-  Auth: { bg: "bg-primary", text: "text-primary-foreground", label: "AUTH" },
-  Approved: { bg: "bg-success", text: "text-success-foreground", label: "APPROVED" },
+  Eligible: { bg: "bg-success", text: "text-success-foreground", label: "ELIGIBLE" },
+  "Not Eligible": { bg: "bg-destructive", text: "text-destructive-foreground", label: "NOT ELIGIBLE" },
+  "Need Additional Documents": { bg: "bg-warning", text: "text-warning-foreground", label: "NEED DOCS" },
+  Shipped: { bg: "bg-primary", text: "text-primary-foreground", label: "SHIPPED" },
   Delivered: { bg: "bg-success", text: "text-success-foreground", label: "DELIVERED" },
-  Closed: { bg: "bg-muted", text: "text-muted-foreground", label: "CLOSED" },
-  "Denied (SNS)": { bg: "bg-destructive", text: "text-destructive-foreground", label: "DENIED" },
-  "Denied (Auth)": { bg: "bg-destructive", text: "text-destructive-foreground", label: "DENIED" },
+  "Auth Applied": { bg: "bg-primary", text: "text-primary-foreground", label: "AUTH APPLIED" },
+  Billed: { bg: "bg-primary", text: "text-primary-foreground", label: "BILLED" },
+  Paid: { bg: "bg-success", text: "text-success-foreground", label: "PAID" },
+  Denied: { bg: "bg-destructive", text: "text-destructive-foreground", label: "DENIED" },
 };
 
 export const StatusBadge = ({ status }: { status: LeadStatus }) => {
-  const config = statusConfig[status];
+  const config = statusConfig[status] || { bg: "bg-muted", text: "text-muted-foreground", label: status?.toUpperCase() || "UNKNOWN" };
   return (
     <span
       className={cn(
