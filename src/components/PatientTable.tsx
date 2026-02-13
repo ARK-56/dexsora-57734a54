@@ -1,6 +1,6 @@
 import { DbLead } from "@/hooks/useLeads";
 import { StatusBadge } from "./StatusBadge";
-import { Star, Download } from "lucide-react";
+import { Star, Download, ClipboardList } from "lucide-react";
 import { LeadStatus } from "@/types/lead";
 
 interface PatientTableProps {
@@ -62,7 +62,18 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
                   <td className="px-2 py-2.5">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Star className="h-4 w-4 hover:text-warning cursor-pointer transition-colors" />
-                      <Download className="h-4 w-4 hover:text-primary cursor-pointer transition-colors" />
+                      {lead.documents.length > 0 && (
+                        <a
+                          href={lead.documents[0].url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                          title="View prescription"
+                        >
+                          <ClipboardList className="h-4 w-4" />
+                        </a>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-2.5">

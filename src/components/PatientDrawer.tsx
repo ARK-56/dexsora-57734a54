@@ -1,8 +1,9 @@
 import { DbLead } from "@/hooks/useLeads";
 import { LeadStatus, UserRole } from "@/types/lead";
 import { StatusBadge } from "./StatusBadge";
-import { X, User, MapPin, Phone, Mail, FileText, Calendar, ExternalLink, Shield, Package } from "lucide-react";
+import { X, User, MapPin, Phone, Mail, FileText, Calendar, ExternalLink, Shield, Package, Download, ClipboardList } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PatientDrawerProps {
   lead: DbLead | null;
@@ -124,16 +125,13 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
             </Section>
           )}
 
-          {/* Documents */}
-          <Section title={`Documents (${lead.documents.length})`}>
+          {/* Prescriptions / Documents */}
+          <Section title={`Prescriptions & Documents (${lead.documents.length})`}>
             {lead.documents.length > 0 ? (
               <div className="space-y-2">
                 {lead.documents.map((doc) => (
-                  <a
+                  <div
                     key={doc.id}
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="flex items-center gap-3 rounded-lg border border-border p-3 transition-all hover:bg-muted/30 hover:border-primary/30 group"
                   >
                     <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
@@ -143,12 +141,28 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
                       <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
                       <p className="text-xs text-muted-foreground">{new Date(doc.created_at).toLocaleDateString()}</p>
                     </div>
-                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </a>
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      title="View"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                    <a
+                      href={doc.url}
+                      download={doc.name}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                      title="Download"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground italic">No documents uploaded</p>
+              <p className="text-sm text-muted-foreground italic">No prescriptions or documents uploaded yet</p>
             )}
           </Section>
 
