@@ -376,15 +376,7 @@ const AdminPanel = () => {
               Users ({profiles.length})
             </button>
           )}
-          <button
-            onClick={() => setActiveTab("chat")}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              activeTab === "chat" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            Chat
-          </button>
+          {/* Chat tab hidden */}
         </div>
 
         {/* Leads Tab */}
