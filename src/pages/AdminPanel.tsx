@@ -264,7 +264,12 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header
+        onNotificationClick={(patientName) => {
+          const lead = leads.find((l) => l.patient_name === patientName);
+          if (lead) setSelectedLead(lead);
+        }}
+      />
 
       <main className="mx-auto max-w-6xl px-4 py-6 lg:px-6 space-y-6">
         <div className="flex items-center justify-between">

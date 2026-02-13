@@ -25,7 +25,7 @@ interface LeadNote {
   is_read: boolean;
 }
 
-const NotesPopup = ({ leadId, patientName, onClose }: { leadId: string; patientName: string; onClose: () => void }) => {
+const NotesPopup = ({ leadId, patientName, onClose, onUnreadChange }: { leadId: string; patientName: string; onClose: () => void; onUnreadChange?: (delta: number) => void }) => {
   const [notes, setNotes] = useState<LeadNote[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,15 +46,16 @@ const NotesPopup = ({ leadId, patientName, onClose }: { leadId: string; patientN
   const markAsRead = async (noteId: string) => {
     await supabase.from("lead_notes").update({ is_read: true }).eq("id", noteId);
     setNotes((prev) => prev.map((n) => (n.id === noteId ? { ...n, is_read: true } : n)));
+    onUnreadChange?.(-1);
   };
 
   return (
     <>
-      <div className="fixed inset-0 z-[60]" onClick={(e) => { e.stopPropagation(); onClose(); }} />
+      <div className="fixed inset-0 z-[60]" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }} />
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-80 rounded-lg border border-border bg-card shadow-xl animate-fade-in">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <p className="text-xs font-semibold text-foreground truncate">Notes for {patientName}</p>
-          <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+          <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
         </div>
         <div className="max-h-60 overflow-y-auto p-2 space-y-2">
           {loading ? (
@@ -116,7 +117,7 @@ const NotesIconButton = ({ leadId, patientName }: { leadId: string; patientName:
           </span>
         )}
       </button>
-      {open && <NotesPopup leadId={leadId} patientName={patientName} onClose={() => { setOpen(false); }} />}
+      {open && <NotesPopup leadId={leadId} patientName={patientName} onClose={() => { setOpen(false); }} onUnreadChange={(delta) => setUnreadCount((c) => Math.max(0, c + delta))} />}
     </div>
   );
 };
