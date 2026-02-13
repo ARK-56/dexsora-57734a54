@@ -127,13 +127,21 @@ const AdminPanel = () => {
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (addForm.password.length < 8) {
+      toast({ title: "Validation Error", description: "Password must be at least 8 characters.", variant: "destructive" });
+      return;
+    }
+    if (addForm.fullName.length > 100 || /[<>{}]/.test(addForm.fullName)) {
+      toast({ title: "Validation Error", description: "Invalid name format.", variant: "destructive" });
+      return;
+    }
     setAdding(true);
     try {
       await callManageUsers({
         action: "create",
-        email: addForm.email,
+        email: addForm.email.trim(),
         password: addForm.password,
-        fullName: addForm.fullName,
+        fullName: addForm.fullName.trim(),
         role: addForm.role,
       });
       toast({ title: "User created", description: `${addForm.email} has been added.` });
@@ -148,14 +156,26 @@ const AdminPanel = () => {
 
   const handleAddDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (doctorForm.password.length < 8) {
+      toast({ title: "Validation Error", description: "Password must be at least 8 characters.", variant: "destructive" });
+      return;
+    }
+    if (!/^\d{10}$/.test(doctorForm.npi)) {
+      toast({ title: "Validation Error", description: "NPI must be exactly 10 digits.", variant: "destructive" });
+      return;
+    }
+    if (doctorForm.fullName.length > 100 || /[<>{}]/.test(doctorForm.fullName)) {
+      toast({ title: "Validation Error", description: "Invalid name format.", variant: "destructive" });
+      return;
+    }
     setAdding(true);
     try {
       await callManageUsers({
         action: "create_doctor",
-        email: doctorForm.email,
+        email: doctorForm.email.trim(),
         password: doctorForm.password,
-        fullName: doctorForm.fullName,
-        npi: doctorForm.npi,
+        fullName: doctorForm.fullName.trim(),
+        npi: doctorForm.npi.trim(),
       });
       toast({ title: "Doctor created", description: `${doctorForm.email} has been added.` });
       setDoctorForm({ fullName: "", email: "", password: "", npi: "" });
@@ -482,7 +502,7 @@ const AdminPanel = () => {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Password</label>
-                  <input type="password" value={addForm.password} onChange={(e) => setAddForm((p) => ({ ...p, password: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="••••••••" required minLength={6} />
+                  <input type="password" value={addForm.password} onChange={(e) => setAddForm((p) => ({ ...p, password: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="••••••••" required minLength={8} />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Role</label>
@@ -527,11 +547,11 @@ const AdminPanel = () => {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Password</label>
-                  <input type="password" value={doctorForm.password} onChange={(e) => setDoctorForm((p) => ({ ...p, password: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="••••••••" required minLength={6} />
+                  <input type="password" value={doctorForm.password} onChange={(e) => setDoctorForm((p) => ({ ...p, password: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="••••••••" required minLength={8} />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">NPI</label>
-                  <input type="text" value={doctorForm.npi} onChange={(e) => setDoctorForm((p) => ({ ...p, npi: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="1234567890" required />
+                  <input type="text" value={doctorForm.npi} onChange={(e) => setDoctorForm((p) => ({ ...p, npi: e.target.value.replace(/\D/g, '').slice(0, 10) }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="1234567890" required pattern="\d{10}" title="NPI must be exactly 10 digits" maxLength={10} />
                 </div>
                 <div className="flex justify-end gap-3 pt-2">
                   <button type="button" onClick={() => setShowAddDoctor(false)} className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted">Cancel</button>

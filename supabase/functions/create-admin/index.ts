@@ -11,29 +11,39 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const { email, password } = await req.json();
+    if (!email || !password) {
+      throw new Error("Email and password are required");
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      throw new Error("Password must be at least 8 characters");
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const adminEmail = "admin@aaadmeinc.com";
-    const adminPassword = "admin123";
+    // Check if any admin already exists
+    const { data: existingAdmins } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin")
+      .limit(1);
 
-    // Check if admin already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const adminExists = existingUsers?.users?.some((u) => u.email === adminEmail);
-
-    if (adminExists) {
+    if (existingAdmins && existingAdmins.length > 0) {
       return new Response(
-        JSON.stringify({ message: "Admin user already exists" }),
+        JSON.stringify({ message: "An admin user already exists" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Create admin user
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: adminEmail,
-      password: adminPassword,
+      email,
+      password,
       email_confirm: true,
       user_metadata: { full_name: "System Admin" },
     });

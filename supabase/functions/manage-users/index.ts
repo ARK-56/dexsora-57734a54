@@ -5,6 +5,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Input validation helpers
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 255;
+const isValidName = (name: string) => name.length > 0 && name.length <= 100 && !/[<>{}]/.test(name);
+const isValidNPI = (npi: string) => /^\d{10}$/.test(npi);
+const isValidPassword = (pw: string) => pw.length >= 8 && pw.length <= 128;
+const VALID_STAFF_ROLES = ["eligibility", "shipment", "billing"];
+const VALID_ALL_ROLES = ["admin", "doctor", "eligibility", "auth_team", "shipment", "billing"];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -36,6 +44,10 @@ Deno.serve(async (req) => {
     if (action === "create") {
       const { email, password, fullName, role } = payload;
       if (!email || !password || !role) throw new Error("Missing required fields");
+      if (!isValidEmail(email)) throw new Error("Invalid email format");
+      if (!isValidPassword(password)) throw new Error("Password must be 8-128 characters");
+      if (fullName && !isValidName(fullName)) throw new Error("Invalid name format");
+      if (!VALID_STAFF_ROLES.includes(role)) throw new Error("Invalid role. Must be one of: " + VALID_STAFF_ROLES.join(", "));
 
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -61,6 +73,10 @@ Deno.serve(async (req) => {
     if (action === "create_doctor") {
       const { email, password, fullName, npi } = payload;
       if (!email || !password || !fullName || !npi) throw new Error("Missing required fields");
+      if (!isValidEmail(email)) throw new Error("Invalid email format");
+      if (!isValidPassword(password)) throw new Error("Password must be 8-128 characters");
+      if (!isValidName(fullName)) throw new Error("Invalid name format");
+      if (!isValidNPI(npi)) throw new Error("NPI must be exactly 10 digits");
 
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -71,14 +87,12 @@ Deno.serve(async (req) => {
 
       if (createError) throw createError;
 
-      // Assign doctor role
       const { error: roleError } = await supabaseAdmin
         .from("user_roles")
         .insert({ user_id: newUser.user.id, role: "doctor" });
 
       if (roleError) throw roleError;
 
-      // Update profile with NPI
       const { error: profileError } = await supabaseAdmin
         .from("profiles")
         .update({ npi })
@@ -95,6 +109,20 @@ Deno.serve(async (req) => {
     if (action === "update") {
       const { userId, fullName, email, role } = payload;
       if (!userId) throw new Error("Missing userId");
+
+      // Validate UUID format
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+        throw new Error("Invalid userId format");
+      }
+
+      if (fullName !== undefined && !isValidName(fullName)) throw new Error("Invalid name format");
+      if (email !== undefined && !isValidEmail(email)) throw new Error("Invalid email format");
+      if (role && !VALID_ALL_ROLES.includes(role)) throw new Error("Invalid role");
+
+      // Prevent admin from removing their own admin role
+      if (userId === caller.id && role && role !== "admin") {
+        throw new Error("Cannot remove your own admin role");
+      }
 
       if (fullName !== undefined || email !== undefined) {
         const updates: any = {};
