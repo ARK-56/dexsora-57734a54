@@ -1,7 +1,10 @@
 import { DbLead } from "@/hooks/useLeads";
 import { StatusBadge } from "./StatusBadge";
-import { Star, Download, ClipboardList } from "lucide-react";
+import { Star, Download, ClipboardList, ChevronLeft, ChevronRight } from "lucide-react";
 import { LeadStatus } from "@/types/lead";
+import { useState } from "react";
+
+const PAGE_SIZE = 10;
 
 interface PatientTableProps {
   leads: DbLead[];
@@ -13,6 +16,11 @@ interface PatientTableProps {
 }
 
 export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect, onToggleAll, allSelected }: PatientTableProps) => {
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(leads.length / PAGE_SIZE));
+  const safeePage = Math.min(page, totalPages - 1);
+  const pagedLeads = leads.slice(safeePage * PAGE_SIZE, (safeePage + 1) * PAGE_SIZE);
+
   return (
     <>
       {/* Desktop table */}
@@ -40,7 +48,7 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {leads.map((lead, idx) => (
+              {pagedLeads.map((lead, idx) => (
                 <tr
                   key={lead.id}
                   onClick={() => onSelectLead(lead)}
@@ -100,6 +108,42 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between border-t border-border px-4 py-3 bg-muted/30">
+          <span className="text-xs text-muted-foreground">
+            Showing {safeePage * PAGE_SIZE + 1}–{Math.min((safeePage + 1) * PAGE_SIZE, leads.length)} of {leads.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={safeePage === 0}
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                className={`flex h-8 w-8 items-center justify-center rounded-md text-xs font-medium transition-colors ${
+                  i === safeePage
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-input bg-background text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={safeePage >= totalPages - 1}
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
