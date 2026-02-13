@@ -11,9 +11,10 @@ interface HeaderProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   onOpenPrescriptions?: () => void;
+  onNotificationClick?: (patientName: string) => void;
 }
 
-export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions }: HeaderProps) => {
+export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, onNotificationClick }: HeaderProps) => {
   const { user, profile, hasAdminAccess, signOut } = useAuth();
   const [trashCount, setTrashCount] = useState(0);
 
@@ -98,7 +99,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions }
           )}
 
           <ThemeToggle />
-          <NotificationPopup />
+          <NotificationPopup onNotificationClick={onNotificationClick} />
 
           <Link
             to="/profile"

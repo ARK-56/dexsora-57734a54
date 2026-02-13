@@ -50,7 +50,7 @@ const NotesPopup = ({ leadId, patientName, onClose }: { leadId: string; patientN
 
   return (
     <>
-      <div className="fixed inset-0 z-[60]" onClick={onClose} />
+      <div className="fixed inset-0 z-[60]" onClick={(e) => { e.stopPropagation(); onClose(); }} />
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-80 rounded-lg border border-border bg-card shadow-xl animate-fade-in">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <p className="text-xs font-semibold text-foreground truncate">Notes for {patientName}</p>
