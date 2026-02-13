@@ -61,7 +61,6 @@ const Login = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
-          <h1 className="font-display text-2xl font-bold text-foreground mb-4">Lead Portal</h1>
           <h1 className="font-display text-2xl font-bold text-foreground">Lead Portal</h1>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your account</p>
         </div>
