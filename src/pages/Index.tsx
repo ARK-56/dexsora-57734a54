@@ -18,6 +18,7 @@ const Index = () => {
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "All">("All");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   if (loading) {
     return (
@@ -31,10 +32,11 @@ const Index = () => {
 
   const currentRole = roles[0] || "doctor";
 
-  const filteredLeads =
-    statusFilter === "All"
-      ? leads
-      : leads.filter((l) => l.status === statusFilter);
+  const filteredLeads = leads.filter((l) => {
+    const matchesStatus = statusFilter === "All" || l.status === statusFilter;
+    const matchesSearch = !searchQuery || l.patient_name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   const handleSubmitLead = async (data: {
     patientName: string;
@@ -85,7 +87,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
       <main className="mx-auto max-w-7xl px-4 py-6 lg:px-6 space-y-6">
         <LifecycleBar />

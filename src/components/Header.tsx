@@ -5,7 +5,12 @@ import { ThemeToggle } from "./ThemeToggle";
 import { Search, LogOut, Settings, UserCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export const Header = () => {
+interface HeaderProps {
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+}
+
+export const Header = ({ searchQuery = "", onSearchChange }: HeaderProps) => {
   const { profile, hasAdminAccess, signOut } = useAuth();
 
   const initials = profile?.full_name
@@ -28,6 +33,8 @@ export const Header = () => {
             <input
               type="text"
               placeholder="Search patients..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange?.(e.target.value)}
               className="h-9 w-64 rounded-lg border border-input bg-background pl-9 pr-4 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
             />
           </div>
