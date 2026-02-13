@@ -3,6 +3,7 @@ import { X, Upload, FileText, Download, ExternalLink, Loader2, Trash2 } from "lu
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { downloadFile } from "@/lib/downloadFile";
 
 interface Prescription {
   id: string;
@@ -143,9 +144,9 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
                     <a href={p.url} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0" title="View">
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
-                    <a href={p.url} download={p.name} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0" title="Download">
+                    <button onClick={() => downloadFile(p.url, p.name)} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0" title="Download">
                       <Download className="h-3.5 w-3.5" />
-                    </a>
+                    </button>
                     {hasAdminAccess && (
                       <button onClick={() => handleDelete(p.id)} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0" title="Delete">
                         <Trash2 className="h-3.5 w-3.5" />

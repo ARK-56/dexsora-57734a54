@@ -4,6 +4,7 @@ import { StatusBadge } from "./StatusBadge";
 import { X, User, MapPin, Phone, Mail, FileText, Calendar, ExternalLink, Shield, Package, Download, ClipboardList } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadFile } from "@/lib/downloadFile";
 
 interface PatientDrawerProps {
   lead: DbLead | null;
@@ -150,14 +151,13 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
-                    <a
-                      href={doc.url}
-                      download={doc.name}
+                    <button
+                      onClick={() => downloadFile(doc.url, doc.name)}
                       className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                       title="Download"
                     >
                       <Download className="h-3.5 w-3.5" />
-                    </a>
+                    </button>
                   </div>
                 ))}
               </div>
