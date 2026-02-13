@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import logo from "@/assets/logo.png";
+
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 60_000; // 1 minute
@@ -61,7 +61,7 @@ const Login = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
-          <img src={logo} alt="AAA DME" className="mx-auto h-16 w-auto mb-4" />
+          <h1 className="font-display text-2xl font-bold text-foreground mb-4">Lead Portal</h1>
           <h1 className="font-display text-2xl font-bold text-foreground">Lead Portal</h1>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your account</p>
         </div>
