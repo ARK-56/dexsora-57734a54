@@ -1,5 +1,7 @@
+import { useState, useEffect, useCallback } from "react";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { NotificationPopup } from "./NotificationPopup";
 import { ThemeToggle } from "./ThemeToggle";
 import { Search, LogOut, Settings, FileText, Trash2 } from "lucide-react";
@@ -12,7 +14,30 @@ interface HeaderProps {
 }
 
 export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions }: HeaderProps) => {
-  const { profile, hasAdminAccess, signOut } = useAuth();
+  const { user, profile, hasAdminAccess, signOut } = useAuth();
+  const [trashCount, setTrashCount] = useState(0);
+
+  const fetchTrashCount = useCallback(async () => {
+    if (!user) return;
+    let query = supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .not("deleted_at", "is", null);
+    if (!hasAdminAccess) {
+      query = query.eq("submitted_by", user.id);
+    }
+    const { count } = await query;
+    setTrashCount(count || 0);
+  }, [user, hasAdminAccess]);
+
+  useEffect(() => {
+    fetchTrashCount();
+    const channel = supabase
+      .channel("trash-count")
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => fetchTrashCount())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchTrashCount]);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -51,11 +76,16 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions }
 
           <Link
             to="/trash"
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+            className="relative flex h-9 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
             title="Trash"
           >
             <Trash2 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Trash</span>
+            {trashCount > 0 && (
+              <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                {trashCount}
+              </span>
+            )}
           </Link>
 
           {hasAdminAccess && (
