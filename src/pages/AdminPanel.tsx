@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil, FileText, Stethoscope, MessageSquare } from "lucide-react";
+import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil, FileText, Stethoscope, MessageSquare, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLeads, DbLead } from "@/hooks/useLeads";
@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { LeadStatus } from "@/types/lead";
 import { Textarea } from "@/components/ui/textarea";
 import { PatientDrawer } from "@/components/PatientDrawer";
+import { AdminChat } from "@/components/AdminChat";
 
 interface ProfileRow {
   user_id: string;
@@ -71,7 +72,7 @@ const AdminPanel = () => {
   const [editUser, setEditUser] = useState<ProfileRow | null>(null);
   const [editForm, setEditForm] = useState({ fullName: "", email: "", role: "" });
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<"users" | "leads">("leads");
+  const [activeTab, setActiveTab] = useState<"users" | "leads" | "chat">("leads");
   const [noteModal, setNoteModal] = useState<{ leadId: string; patientName: string } | null>(null);
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
@@ -352,6 +353,15 @@ const AdminPanel = () => {
           >
             Users ({profiles.length})
           </button>
+          <button
+            onClick={() => setActiveTab("chat")}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === "chat" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Chat
+          </button>
         </div>
 
         {/* Leads Tab */}
@@ -498,6 +508,9 @@ const AdminPanel = () => {
             )}
           </div>
         )}
+
+        {/* Chat Tab */}
+        {activeTab === "chat" && <AdminChat />}
       </main>
 
       {/* Add User Modal (Staff roles only) */}
