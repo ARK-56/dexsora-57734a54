@@ -14,7 +14,7 @@ import { Filter, Trash2 } from "lucide-react";
 import { useLeads, DbLead } from "@/hooks/useLeads";
 
 const Index = () => {
-  const { user, loading, hasAdminAccess, isDoctor, roles, fullyAuthenticated } = useAuth();
+  const { user, loading, hasAdminAccess, isDoctor, roles } = useAuth();
   const { leads, loading: leadsLoading, createLead, updateLeadStatus, softDeleteLeads, permanentDeleteLeads } = useLeads();
   const [selectedLead, setSelectedLead] = useState<DbLead | null>(null);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
@@ -32,7 +32,7 @@ const Index = () => {
     );
   }
 
-  if (!user || !fullyAuthenticated) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
 
   // Only doctors can access the doctor panel (Index page)
   // Admin panel users should use /admin

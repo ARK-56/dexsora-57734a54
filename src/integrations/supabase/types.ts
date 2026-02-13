@@ -186,33 +186,6 @@ export type Database = {
         }
         Relationships: []
       }
-      login_verifications: {
-        Row: {
-          code: string
-          created_at: string | null
-          expires_at: string
-          id: string
-          user_id: string
-          verified: boolean | null
-        }
-        Insert: {
-          code: string
-          created_at?: string | null
-          expires_at: string
-          id?: string
-          user_id: string
-          verified?: boolean | null
-        }
-        Update: {
-          code?: string
-          created_at?: string | null
-          expires_at?: string
-          id?: string
-          user_id?: string
-          verified?: boolean | null
-        }
-        Relationships: []
-      }
       notifications: {
         Row: {
           created_at: string

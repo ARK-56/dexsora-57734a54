@@ -108,8 +108,10 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
           variant: "destructive",
         });
       } else {
-        // Store file path instead of public URL for security
-        uploadedDocs.push({ name: file.name, url: filePath });
+        const { data: urlData } = supabase.storage
+          .from("lead-documents")
+          .getPublicUrl(filePath);
+        uploadedDocs.push({ name: file.name, url: urlData.publicUrl });
       }
       
       setUploadProgress(Math.round(((i + 1) / files.length) * 100));

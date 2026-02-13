@@ -57,7 +57,7 @@ const getAvailableStatuses = (currentStatus: string, roles: string[]): LeadStatu
 };
 
 const AdminPanel = () => {
-  const { hasAdminAccess, isAdmin, loading, roles, profile, fullyAuthenticated } = useAuth();
+  const { hasAdminAccess, isAdmin, loading, roles, profile } = useAuth();
   const { toast } = useToast();
   const { leads, loading: leadsLoading, updateLeadStatus } = useLeads();
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
@@ -100,7 +100,7 @@ const AdminPanel = () => {
     );
   }
 
-  if (!hasAdminAccess || !fullyAuthenticated) return <Navigate to="/login" replace />;
+  if (!hasAdminAccess) return <Navigate to="/" replace />;
 
   const getUserRoles = (userId: string) =>
     userRoles.filter((r) => r.user_id === userId).map((r) => r.role);

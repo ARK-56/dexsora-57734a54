@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { getSignedUrl } from "@/lib/signedUrl";
 
 export interface DbLead {
   id: string;
@@ -37,15 +36,6 @@ export interface DbLeadDocument {
   created_at: string;
 }
 
-const resolveDocUrls = async (docs: DbLeadDocument[]): Promise<DbLeadDocument[]> => {
-  return Promise.all(
-    docs.map(async (doc) => ({
-      ...doc,
-      url: await getSignedUrl(doc.url) || doc.url,
-    }))
-  );
-};
-
 export const useLeads = () => {
   const { user, hasAdminAccess, profile } = useAuth();
   const { toast } = useToast();
@@ -55,10 +45,11 @@ export const useLeads = () => {
   const fetchLeads = useCallback(async () => {
     if (!user) return;
 
+    // Auto-update stale leads
     try {
       await supabase.rpc("auto_update_stale_leads");
     } catch (e) {
-      // Ignore
+      // Ignore if function doesn't exist or fails
     }
 
     let query = supabase
@@ -89,19 +80,13 @@ export const useLeads = () => {
       docsMap.set(doc.lead_id, existing);
     });
 
-    // Resolve signed URLs for all documents
-    const resolvedDocsMap = new Map<string, DbLeadDocument[]>();
-    for (const [leadId, docs] of docsMap.entries()) {
-      resolvedDocsMap.set(leadId, await resolveDocUrls(docs));
-    }
-
     const enrichedLeads: DbLead[] = (leadsData || []).map((lead) => ({
       ...lead,
       item: (lead as any).item || null,
       diagnosis: (lead as any).diagnosis || null,
       doctor_name: (lead as any).doctor_name || null,
       doctor_npi: (lead as any).doctor_npi || null,
-      documents: resolvedDocsMap.get(lead.id) || [],
+      documents: docsMap.get(lead.id) || [],
     }));
 
     setLeads(enrichedLeads);
@@ -250,18 +235,13 @@ export const useLeads = () => {
       docsMap.set(doc.lead_id, existing);
     });
 
-    const resolvedDocsMap = new Map<string, DbLeadDocument[]>();
-    for (const [leadId, docs] of docsMap.entries()) {
-      resolvedDocsMap.set(leadId, await resolveDocUrls(docs));
-    }
-
     return (leadsData || []).map((lead) => ({
       ...lead,
       item: (lead as any).item || null,
       diagnosis: (lead as any).diagnosis || null,
       doctor_name: (lead as any).doctor_name || null,
       doctor_npi: (lead as any).doctor_npi || null,
-      documents: resolvedDocsMap.get(lead.id) || [],
+      documents: docsMap.get(lead.id) || [],
     })) as DbLead[];
   }, [user, hasAdminAccess]);
 
