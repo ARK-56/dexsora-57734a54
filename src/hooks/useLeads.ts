@@ -19,6 +19,7 @@ export interface DbLead {
   submitted_by: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
   documents: DbLeadDocument[];
 }
 
@@ -41,6 +42,7 @@ export const useLeads = () => {
     const { data: leadsData, error: leadsError } = await supabase
       .from("leads")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (leadsError) {
@@ -145,7 +147,21 @@ export const useLeads = () => {
     await fetchLeads();
   };
 
-  const deleteLeads = async (leadIds: string[]) => {
+  const softDeleteLeads = async (leadIds: string[]) => {
+    const { error } = await supabase
+      .from("leads")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", leadIds);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    await fetchLeads();
+    toast({ title: "Moved to trash", description: `${leadIds.length} lead(s) moved to trash.` });
+  };
+
+  const permanentDeleteLeads = async (leadIds: string[]) => {
     const { error } = await supabase
       .from("leads")
       .delete()
@@ -156,8 +172,44 @@ export const useLeads = () => {
       return;
     }
     await fetchLeads();
-    toast({ title: "Leads deleted", description: `${leadIds.length} lead(s) removed.` });
+    toast({ title: "Permanently deleted", description: `${leadIds.length} lead(s) permanently removed.` });
   };
 
-  return { leads, loading, createLead, updateLeadStatus, deleteLeads, refreshLeads: fetchLeads };
+  const restoreLeads = async (leadIds: string[]) => {
+    const { error } = await supabase
+      .from("leads")
+      .update({ deleted_at: null })
+      .in("id", leadIds);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    await fetchLeads();
+    toast({ title: "Restored", description: `${leadIds.length} lead(s) restored.` });
+  };
+
+  const fetchTrashedLeads = useCallback(async () => {
+    const { data: leadsData } = await supabase
+      .from("leads")
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+
+    const { data: docsData } = await supabase.from("lead_documents").select("*");
+
+    const docsMap = new Map<string, DbLeadDocument[]>();
+    (docsData || []).forEach((doc) => {
+      const existing = docsMap.get(doc.lead_id) || [];
+      existing.push(doc);
+      docsMap.set(doc.lead_id, existing);
+    });
+
+    return (leadsData || []).map((lead) => ({
+      ...lead,
+      documents: docsMap.get(lead.id) || [],
+    })) as DbLead[];
+  }, []);
+
+  return { leads, loading, createLead, updateLeadStatus, softDeleteLeads, permanentDeleteLeads, restoreLeads, fetchTrashedLeads, refreshLeads: fetchLeads };
 };
