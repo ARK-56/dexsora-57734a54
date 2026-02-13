@@ -340,9 +340,9 @@ const AdminPanel = () => {
                     {leads.map((lead, idx) => {
                       const availStatuses = availableStatusesForRole(lead.status);
                       return (
-                        <tr key={lead.id} className={`border-b border-border transition-colors hover:bg-muted/30 cursor-pointer ${idx % 2 === 1 ? "bg-muted/10" : ""}`} onClick={() => setSelectedLead(lead)}>
-                          <td className="px-4 py-3">
-                            <p className="text-sm font-semibold text-foreground">{lead.patient_name}</p>
+                        <tr key={lead.id} className={`border-b border-border transition-colors hover:bg-muted/30 ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
+                          <td className="px-4 py-3 cursor-pointer" onClick={() => setSelectedLead(lead)}>
+                            <p className="text-sm font-semibold text-primary hover:underline">{lead.patient_name}</p>
                           </td>
                           <td className="px-4 py-3">
                             <p className="text-sm font-medium text-foreground">{lead.doctor_name || "—"}</p>
