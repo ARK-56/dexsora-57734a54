@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationPopup } from "./NotificationPopup";
 import { ThemeToggle } from "./ThemeToggle";
-import { Search, LogOut, Settings, FileText, Trash2 } from "lucide-react";
+import { Search, LogOut, Settings, FileText, Trash2, Hexagon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface HeaderProps {
@@ -47,9 +47,12 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-card">
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-        <Link to="/" className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Hexagon className="h-4.5 w-4.5" />
+          </div>
           <div className="hidden sm:block">
-            <h1 className="font-display text-lg font-bold text-foreground leading-tight">Lead Portal</h1>
+            <h1 className="font-display text-lg font-bold text-foreground leading-tight">Dexsora</h1>
           </div>
         </Link>
 
