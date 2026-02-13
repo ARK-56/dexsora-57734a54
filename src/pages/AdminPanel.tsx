@@ -78,6 +78,7 @@ const AdminPanel = () => {
   const [addingNote, setAddingNote] = useState(false);
   const [selectedLead, setSelectedLead] = useState<DbLead | null>(null);
   const [unreadNotesCount, setUnreadNotesCount] = useState(0);
+  const [newLeadsCount, setNewLeadsCount] = useState(0);
 
   const fetchUnreadNotes = async () => {
     const { count } = await supabase
@@ -87,6 +88,19 @@ const AdminPanel = () => {
       .eq("is_internal", false);
     setUnreadNotesCount(count || 0);
   };
+
+  // Track new leads count
+  useEffect(() => {
+    const count = leads.filter((l) => l.status === "New Lead").length;
+    setNewLeadsCount(count);
+  }, [leads]);
+
+  // Reset new leads count when leads tab is opened
+  useEffect(() => {
+    if (activeTab === "leads") {
+      setNewLeadsCount(0);
+    }
+  }, [activeTab]);
 
   const fetchData = async () => {
     const [profilesRes, rolesRes] = await Promise.all([
@@ -302,38 +316,40 @@ const AdminPanel = () => {
           )}
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Users className="h-5 w-5" />
+        {/* Stats - only for admin */}
+        {isAdmin && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold font-display text-foreground">{profiles.length}</p>
+                <p className="text-xs text-muted-foreground">Total Users</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold font-display text-foreground">{profiles.length}</p>
-              <p className="text-xs text-muted-foreground">Total Users</p>
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold font-display text-foreground">{leads.length}</p>
+                <p className="text-xs text-muted-foreground">Total Leads</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
+                <Shield className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold font-display text-foreground">
+                  {userRoles.filter((r) => r.role === "admin").length}
+                </p>
+                <p className="text-xs text-muted-foreground">Admins</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
-              <FileText className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold font-display text-foreground">{leads.length}</p>
-              <p className="text-xs text-muted-foreground">Total Leads</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
-              <Shield className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold font-display text-foreground">
-                {userRoles.filter((r) => r.role === "admin").length}
-              </p>
-              <p className="text-xs text-muted-foreground">Admins</p>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 border-b border-border">
@@ -344,20 +360,22 @@ const AdminPanel = () => {
             }`}
           >
             Leads ({leads.length})
-            {unreadNotesCount > 0 && (
+            {activeTab !== "leads" && newLeadsCount > 0 && (
               <span className="ml-1.5 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                {unreadNotesCount}
+                {newLeadsCount}
               </span>
             )}
           </button>
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              activeTab === "users" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Users ({profiles.length})
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab("users")}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === "users" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Users ({profiles.length})
+            </button>
+          )}
           <button
             onClick={() => setActiveTab("chat")}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
