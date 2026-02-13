@@ -6,10 +6,11 @@ import { Header } from "@/components/Header";
 import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil, FileText, Stethoscope, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useLeads } from "@/hooks/useLeads";
+import { useLeads, DbLead } from "@/hooks/useLeads";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LeadStatus } from "@/types/lead";
 import { Textarea } from "@/components/ui/textarea";
+import { PatientDrawer } from "@/components/PatientDrawer";
 
 interface ProfileRow {
   user_id: string;
@@ -74,6 +75,7 @@ const AdminPanel = () => {
   const [noteModal, setNoteModal] = useState<{ leadId: string; patientName: string } | null>(null);
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<DbLead | null>(null);
 
   const fetchData = async () => {
     const [profilesRes, rolesRes] = await Promise.all([
@@ -338,7 +340,7 @@ const AdminPanel = () => {
                     {leads.map((lead, idx) => {
                       const availStatuses = availableStatusesForRole(lead.status);
                       return (
-                        <tr key={lead.id} className={`border-b border-border transition-colors hover:bg-muted/30 ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
+                        <tr key={lead.id} className={`border-b border-border transition-colors hover:bg-muted/30 cursor-pointer ${idx % 2 === 1 ? "bg-muted/10" : ""}`} onClick={() => setSelectedLead(lead)}>
                           <td className="px-4 py-3">
                             <p className="text-sm font-semibold text-foreground">{lead.patient_name}</p>
                           </td>
@@ -621,6 +623,17 @@ const AdminPanel = () => {
           </div>
         </>
       )}
+
+      <PatientDrawer
+        lead={selectedLead}
+        onClose={() => setSelectedLead(null)}
+        currentRole={roles[0] as any || "admin"}
+        canUpdateStatus={true}
+        onUpdateStatus={(id, status) => {
+          handleUpdateLeadStatus(id, status);
+          setSelectedLead(null);
+        }}
+      />
     </div>
   );
 };
