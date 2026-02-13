@@ -1,9 +1,10 @@
 import { DbLead } from "@/hooks/useLeads";
 import { StatusBadge } from "./StatusBadge";
-import { Star, ClipboardList, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, ClipboardList, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import { LeadStatus } from "@/types/lead";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const PAGE_SIZE = 10;
 
@@ -15,6 +16,110 @@ interface PatientTableProps {
   onToggleAll: () => void;
   allSelected: boolean;
 }
+
+interface LeadNote {
+  id: string;
+  text: string;
+  author: string;
+  created_at: string;
+  is_read: boolean;
+}
+
+const NotesPopup = ({ leadId, patientName, onClose }: { leadId: string; patientName: string; onClose: () => void }) => {
+  const [notes, setNotes] = useState<LeadNote[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNotes = async () => {
+      const { data } = await supabase
+        .from("lead_notes")
+        .select("id, text, author, created_at, is_read")
+        .eq("lead_id", leadId)
+        .eq("is_internal", false)
+        .order("created_at", { ascending: false });
+      setNotes((data as LeadNote[]) || []);
+      setLoading(false);
+    };
+    fetchNotes();
+  }, [leadId]);
+
+  const markAsRead = async (noteId: string) => {
+    await supabase.from("lead_notes").update({ is_read: true }).eq("id", noteId);
+    setNotes((prev) => prev.map((n) => (n.id === noteId ? { ...n, is_read: true } : n)));
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-lg border border-border bg-card shadow-xl animate-fade-in">
+        <div className="flex items-center justify-between border-b border-border px-3 py-2">
+          <p className="text-xs font-semibold text-foreground truncate">Notes for {patientName}</p>
+          <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+        </div>
+        <div className="max-h-60 overflow-y-auto p-2 space-y-2">
+          {loading ? (
+            <p className="text-xs text-muted-foreground text-center py-4">Loading...</p>
+          ) : notes.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-4">No notes yet</p>
+          ) : (
+            notes.map((note) => (
+              <div key={note.id} className={`rounded-md border p-2 text-xs ${note.is_read ? "border-border bg-muted/20" : "border-primary/30 bg-primary/5"}`}>
+                <p className="text-foreground">{note.text}</p>
+                <div className="flex items-center justify-between mt-1.5">
+                  <span className="text-muted-foreground">{note.author} · {new Date(note.created_at).toLocaleDateString()}</span>
+                  {!note.is_read && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); markAsRead(note.id); }}
+                      className="text-[10px] font-medium text-primary hover:underline"
+                    >
+                      Mark read
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
+const NotesIconButton = ({ leadId, patientName }: { leadId: string; patientName: string }) => {
+  const [open, setOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("lead_notes")
+        .select("id", { count: "exact", head: true })
+        .eq("lead_id", leadId)
+        .eq("is_internal", false)
+        .eq("is_read", false);
+      setUnreadCount(count || 0);
+    };
+    fetchCount();
+  }, [leadId]);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className="text-muted-foreground hover:text-primary transition-colors relative"
+        title="View notes"
+      >
+        <MessageSquare className="h-3.5 w-3.5" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-destructive px-0.5 text-[9px] font-bold text-destructive-foreground">
+            {unreadCount}
+          </span>
+        )}
+      </button>
+      {open && <NotesPopup leadId={leadId} patientName={patientName} onClose={() => { setOpen(false); }} />}
+    </div>
+  );
+};
 
 export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect, onToggleAll, allSelected }: PatientTableProps) => {
   const [page, setPage] = useState(0);
@@ -68,8 +173,11 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
                       onChange={() => onToggleSelect(lead.id)}
                     />
                   </td>
-                  <td className="px-4 py-2.5 font-semibold text-foreground whitespace-nowrap max-w-[200px] truncate">
-                    {lead.patient_name}
+                  <td className="px-4 py-2.5 font-semibold text-foreground whitespace-nowrap max-w-[200px]">
+                    <div className="flex items-center gap-1.5 relative">
+                      <span className="truncate">{lead.patient_name}</span>
+                      <NotesIconButton leadId={lead.id} patientName={lead.patient_name} />
+                    </div>
                   </td>
                   <td className="px-2 py-2.5">
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -173,8 +281,9 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
                   onChange={(e) => { e.stopPropagation(); onToggleSelect(lead.id); }}
                   onClick={(e) => e.stopPropagation()}
                 />
-                <div>
+                <div className="flex items-center gap-1.5">
                   <p className="font-semibold text-foreground">{lead.patient_name}</p>
+                  <NotesIconButton leadId={lead.id} patientName={lead.patient_name} />
                   <p className="text-xs text-muted-foreground mt-0.5">DOB: {lead.dob}</p>
                 </div>
               </div>

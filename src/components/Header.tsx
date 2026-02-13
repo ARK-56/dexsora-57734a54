@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import logo from "@/assets/logo.png";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationPopup } from "./NotificationPopup";
@@ -47,7 +47,6 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions }
     <header className="sticky top-0 z-30 border-b border-border bg-card">
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         <Link to="/" className="flex items-center gap-3">
-          <img src={logo} alt="AAA DME" className="h-10 w-auto" />
           <div className="hidden sm:block">
             <h1 className="font-display text-lg font-bold text-foreground leading-tight">Lead Portal</h1>
           </div>

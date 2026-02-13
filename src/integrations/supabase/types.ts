@@ -88,6 +88,7 @@ export type Database = {
           created_at: string
           id: string
           is_internal: boolean
+          is_read: boolean
           lead_id: string
           text: string
         }
@@ -96,6 +97,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_internal?: boolean
+          is_read?: boolean
           lead_id: string
           text: string
         }
@@ -104,6 +106,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_internal?: boolean
+          is_read?: boolean
           lead_id?: string
           text?: string
         }
@@ -183,6 +186,33 @@ export type Database = {
           submitted_by?: string | null
           tracking_number?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      login_verifications: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          user_id: string
+          verified: boolean | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          user_id: string
+          verified?: boolean | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          user_id?: string
+          verified?: boolean | null
         }
         Relationships: []
       }
