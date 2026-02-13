@@ -2,15 +2,16 @@ import logo from "@/assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationPopup } from "./NotificationPopup";
 import { ThemeToggle } from "./ThemeToggle";
-import { Search, LogOut, Settings, UserCircle } from "lucide-react";
+import { Search, LogOut, Settings, FileText, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface HeaderProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  onOpenPrescriptions?: () => void;
 }
 
-export const Header = ({ searchQuery = "", onSearchChange }: HeaderProps) => {
+export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions }: HeaderProps) => {
   const { profile, hasAdminAccess, signOut } = useAuth();
 
   const initials = profile?.full_name
@@ -38,6 +39,26 @@ export const Header = ({ searchQuery = "", onSearchChange }: HeaderProps) => {
               className="h-9 w-64 rounded-lg border border-input bg-background pl-9 pr-4 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
             />
           </div>
+
+          <button
+            onClick={onOpenPrescriptions}
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+            title="Prescriptions"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Prescriptions</span>
+          </button>
+
+          {hasAdminAccess && (
+            <Link
+              to="/trash"
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+              title="Trash"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Trash</span>
+            </Link>
+          )}
 
           {hasAdminAccess && (
             <Link

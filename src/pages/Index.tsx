@@ -7,6 +7,7 @@ import { PatientDrawer } from "@/components/PatientDrawer";
 import { SubmitLeadModal } from "@/components/SubmitLeadModal";
 import { LifecycleBar } from "@/components/LifecycleBar";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
+import { PrescriptionPanel } from "@/components/PrescriptionPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Filter, Trash2 } from "lucide-react";
@@ -21,6 +22,7 @@ const Index = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [prescriptionOpen, setPrescriptionOpen] = useState(false);
 
   if (loading) {
     return (
@@ -97,7 +99,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} onOpenPrescriptions={() => setPrescriptionOpen(true)} />
 
       <main className="mx-auto max-w-7xl px-4 py-6 lg:px-6 space-y-6">
         <LifecycleBar />
@@ -172,6 +174,7 @@ const Index = () => {
         onUpdateStatus={handleUpdateLeadStatus}
       />
       <SubmitLeadModal isOpen={isSubmitOpen} onClose={() => setIsSubmitOpen(false)} onSubmit={handleSubmitLead} />
+      <PrescriptionPanel open={prescriptionOpen} onClose={() => setPrescriptionOpen(false)} />
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
