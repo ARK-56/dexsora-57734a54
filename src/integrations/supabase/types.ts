@@ -168,6 +168,30 @@ export type Database = {
         }
         Relationships: []
       }
+      prescriptions: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          uploaded_by: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          uploaded_by?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          uploaded_by?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
