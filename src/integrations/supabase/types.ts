@@ -90,10 +90,14 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           denial_reason: string | null
+          diagnosis: string | null
           dme_items: string | null
           dob: string
+          doctor_name: string | null
+          doctor_npi: string | null
           email: string | null
           id: string
+          item: string | null
           medicare_id: string
           patient_name: string
           phone: string | null
@@ -108,10 +112,14 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           denial_reason?: string | null
+          diagnosis?: string | null
           dme_items?: string | null
           dob: string
+          doctor_name?: string | null
+          doctor_npi?: string | null
           email?: string | null
           id?: string
+          item?: string | null
           medicare_id: string
           patient_name: string
           phone?: string | null
@@ -126,10 +134,14 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           denial_reason?: string | null
+          diagnosis?: string | null
           dme_items?: string | null
           dob?: string
+          doctor_name?: string | null
+          doctor_npi?: string | null
           email?: string | null
           id?: string
+          item?: string | null
           medicare_id?: string
           patient_name?: string
           phone?: string | null
@@ -199,6 +211,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          npi: string | null
           updated_at: string
           user_id: string
         }
@@ -208,6 +221,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          npi?: string | null
           updated_at?: string
           user_id: string
         }
@@ -217,6 +231,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          npi?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -245,6 +260,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_update_stale_leads: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -254,7 +270,14 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "doctor" | "eligibility" | "auth_team" | "logistics"
+      app_role:
+        | "admin"
+        | "doctor"
+        | "eligibility"
+        | "auth_team"
+        | "logistics"
+        | "shipment"
+        | "billing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -382,7 +405,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "doctor", "eligibility", "auth_team", "logistics"],
+      app_role: [
+        "admin",
+        "doctor",
+        "eligibility",
+        "auth_team",
+        "logistics",
+        "shipment",
+        "billing",
+      ],
     },
   },
 } as const

@@ -1,8 +1,9 @@
 import { DbLead } from "@/hooks/useLeads";
 import { StatusBadge } from "./StatusBadge";
-import { Star, Download, ClipboardList, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, ClipboardList, ChevronLeft, ChevronRight } from "lucide-react";
 import { LeadStatus } from "@/types/lead";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PAGE_SIZE = 10;
 
@@ -17,6 +18,7 @@ interface PatientTableProps {
 
 export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect, onToggleAll, allSelected }: PatientTableProps) => {
   const [page, setPage] = useState(0);
+  const { hasAdminAccess } = useAuth();
   const totalPages = Math.max(1, Math.ceil(leads.length / PAGE_SIZE));
   const safeePage = Math.min(page, totalPages - 1);
   const pagedLeads = leads.slice(safeePage * PAGE_SIZE, (safeePage + 1) * PAGE_SIZE);
@@ -40,9 +42,11 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Patient</th>
                 <th className="w-20 px-3 py-3" />
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Criteria</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Submitted</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">DME Items</th>
+                {hasAdminAccess && (
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Doctor</th>
+                )}
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order Date</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Item</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Docs</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Updated</th>
               </tr>
@@ -76,7 +80,7 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
                           onSelectLead(lead);
                         }}
                         className="text-muted-foreground hover:text-primary transition-colors"
-                        title={lead.documents.length > 0 ? `View ${lead.documents.length} prescription(s)` : "No prescriptions yet"}
+                        title={lead.documents.length > 0 ? `View ${lead.documents.length} document(s)` : "No documents yet"}
                       >
                         <ClipboardList className="h-4 w-4" />
                       </button>
@@ -85,14 +89,19 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
                   <td className="px-4 py-2.5">
                     <StatusBadge status={lead.status as LeadStatus} />
                   </td>
-                  <td className="px-4 py-2.5">
-                    <SecondaryStatus status={lead.status} />
-                  </td>
+                  {hasAdminAccess && (
+                    <td className="px-4 py-2.5 text-xs text-foreground whitespace-nowrap">
+                      <div>
+                        <p className="font-medium">{lead.doctor_name || "—"}</p>
+                        {lead.doctor_npi && <p className="text-muted-foreground">NPI: {lead.doctor_npi}</p>}
+                      </div>
+                    </td>
+                  )}
                   <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap text-xs">
                     {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </td>
                   <td className="px-4 py-2.5 text-foreground whitespace-nowrap text-xs">
-                    {lead.dme_items || "—"}
+                    {lead.item || lead.dme_items || "—"}
                   </td>
                   <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap text-xs">
                     {lead.documents.length > 0 ? (
@@ -172,30 +181,12 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
               <StatusBadge status={lead.status as LeadStatus} />
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 border-t border-border pt-2">
-              <span>Submitted: {new Date(lead.created_at).toLocaleDateString()}</span>
-              {lead.dme_items && <span className="font-medium text-foreground">{lead.dme_items}</span>}
+              <span>Order Date: {new Date(lead.created_at).toLocaleDateString()}</span>
+              {(lead.item || lead.dme_items) && <span className="font-medium text-foreground">{lead.item || lead.dme_items}</span>}
             </div>
           </div>
         ))}
       </div>
     </>
   );
-};
-
-const SecondaryStatus = ({ status }: { status: string }) => {
-  if (status === "Approved" || status === "Delivered" || status === "Closed") {
-    return (
-      <span className="inline-block rounded-md px-2.5 py-1 text-xs font-bold text-success-foreground bg-success/90">
-        MET
-      </span>
-    );
-  }
-  if (status.startsWith("Denied")) {
-    return (
-      <span className="inline-block rounded-md px-2.5 py-1 text-xs font-bold text-warning-foreground bg-warning/90">
-        NOT MET
-      </span>
-    );
-  }
-  return <span className="inline-block h-6 w-full rounded-md bg-muted/40" />;
 };

@@ -1,10 +1,11 @@
 import { DbLead } from "@/hooks/useLeads";
 import { LeadStatus, UserRole } from "@/types/lead";
 import { StatusBadge } from "./StatusBadge";
-import { X, User, MapPin, Phone, Mail, FileText, Calendar, ExternalLink, Shield, Package, Download, ClipboardList } from "lucide-react";
-import { useState } from "react";
+import { X, User, MapPin, Phone, Mail, FileText, Calendar, ExternalLink, Shield, Package, Download, ClipboardList, MessageSquare } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadFile } from "@/lib/downloadFile";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PatientDrawerProps {
   lead: DbLead | null;
@@ -15,13 +16,52 @@ interface PatientDrawerProps {
 }
 
 const ALL_STATUSES: LeadStatus[] = [
-  "Pending", "Open", "Auth", "Approved", "Delivered", "Closed", "Denied (SNS)", "Denied (Auth)",
+  "New Lead", "Pending", "Eligible", "Not Eligible", "Need Additional Documents",
+  "Shipped", "Delivered", "Auth Applied", "Billed", "Paid", "Denied",
 ];
+
+const getAvailableStatuses = (currentStatus: string, roles: string[]): LeadStatus[] => {
+  const isAdmin = roles.includes("admin");
+  if (isAdmin) return ALL_STATUSES;
+
+  const isEligibility = roles.includes("eligibility");
+  const isShipment = roles.includes("shipment");
+  const isBilling = roles.includes("billing");
+
+  if (isEligibility && (currentStatus === "New Lead" || currentStatus === "Pending")) {
+    return ["Eligible", "Not Eligible", "Need Additional Documents"];
+  }
+  if (isShipment && (currentStatus === "Eligible" || currentStatus === "Need Additional Documents")) {
+    return ["Shipped", "Delivered"];
+  }
+  if (isBilling && (currentStatus === "Shipped" || currentStatus === "Delivered")) {
+    return ["Auth Applied", "Billed", "Paid", "Denied"];
+  }
+  return [];
+};
+
+interface LeadNote {
+  id: string;
+  text: string;
+  author: string;
+  created_at: string;
+  is_internal: boolean;
+}
 
 export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onUpdateStatus }: PatientDrawerProps) => {
   const [editingStatus, setEditingStatus] = useState(false);
+  const { roles } = useAuth();
+  const [notes, setNotes] = useState<LeadNote[]>([]);
+
+  useEffect(() => {
+    if (!lead) return;
+    supabase.from("lead_notes").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false })
+      .then(({ data }) => setNotes(data || []));
+  }, [lead?.id]);
 
   if (!lead) return null;
+
+  const availableStatuses = getAvailableStatuses(lead.status, roles);
 
   const initials = lead.patient_name
     .split(" ")
@@ -61,7 +101,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</span>
             <div className="flex items-center gap-2">
               <StatusBadge status={lead.status as LeadStatus} />
-              {canUpdateStatus && (
+              {canUpdateStatus && availableStatuses.length > 0 && (
                 <button
                   onClick={() => setEditingStatus(!editingStatus)}
                   className="text-xs font-medium text-primary hover:underline"
@@ -74,7 +114,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
 
           {editingStatus && canUpdateStatus && onUpdateStatus && (
             <div className="flex flex-wrap gap-1.5 px-5 pb-3">
-              {ALL_STATUSES.filter((s) => s !== lead.status).map((s) => (
+              {availableStatuses.filter((s) => s !== lead.status).map((s) => (
                 <button
                   key={s}
                   onClick={() => {
@@ -98,18 +138,27 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
             </div>
           )}
 
+          {/* Doctor Info */}
+          {(lead.doctor_name || lead.doctor_npi) && (
+            <Section title="Doctor Information">
+              {lead.doctor_name && <InfoRow icon={<User className="h-4 w-4" />} label="Doctor" value={lead.doctor_name} />}
+              {lead.doctor_npi && <InfoRow icon={<Shield className="h-4 w-4" />} label="NPI" value={lead.doctor_npi} />}
+            </Section>
+          )}
+
           {/* Patient Info */}
           <Section title="Contact Information">
             <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={lead.phone || "—"} />
-            <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={lead.email || "—"} />
             <InfoRow icon={<MapPin className="h-4 w-4" />} label="Address" value={lead.address || "—"} />
           </Section>
 
-          {/* Insurance */}
-          <Section title="Insurance">
-            <InfoRow icon={<Shield className="h-4 w-4" />} label="Medicare ID" value={lead.medicare_id} />
-            <InfoRow icon={<FileText className="h-4 w-4" />} label="PPO ID" value={lead.ppo_id || "—"} />
-          </Section>
+          {/* Product Info */}
+          {(lead.item || lead.diagnosis) && (
+            <Section title="Product Information">
+              {lead.item && <InfoRow icon={<Package className="h-4 w-4" />} label="Item" value={lead.item} />}
+              {lead.diagnosis && <InfoRow icon={<FileText className="h-4 w-4" />} label="Diagnosis" value={lead.diagnosis} />}
+            </Section>
+          )}
 
           {lead.dme_items && (
             <Section title="DME Items">
@@ -126,8 +175,25 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
             </Section>
           )}
 
-          {/* Prescriptions / Documents */}
-          <Section title={`Prescriptions & Documents (${lead.documents.length})`}>
+          {/* Notes */}
+          {notes.length > 0 && (
+            <Section title={`Notes (${notes.length})`}>
+              <div className="space-y-2">
+                {notes.map((note) => (
+                  <div key={note.id} className="rounded-lg border border-border p-3">
+                    <p className="text-sm text-foreground">{note.text}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-muted-foreground">{note.author}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(note.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* Documents */}
+          <Section title={`Documents (${lead.documents.length})`}>
             {lead.documents.length > 0 ? (
               <div className="space-y-2">
                 {lead.documents.map((doc) => (
@@ -162,7 +228,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground italic">No prescriptions or documents uploaded yet</p>
+              <p className="text-sm text-muted-foreground italic">No documents uploaded yet</p>
             )}
           </Section>
 

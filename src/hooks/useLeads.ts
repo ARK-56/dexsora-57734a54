@@ -13,6 +13,10 @@ export interface DbLead {
   medicare_id: string;
   ppo_id: string | null;
   dme_items: string | null;
+  item: string | null;
+  diagnosis: string | null;
+  doctor_name: string | null;
+  doctor_npi: string | null;
   status: string;
   denial_reason: string | null;
   tracking_number: string | null;
@@ -33,7 +37,7 @@ export interface DbLeadDocument {
 }
 
 export const useLeads = () => {
-  const { user, hasAdminAccess } = useAuth();
+  const { user, hasAdminAccess, profile } = useAuth();
   const { toast } = useToast();
   const [leads, setLeads] = useState<DbLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,13 +45,19 @@ export const useLeads = () => {
   const fetchLeads = useCallback(async () => {
     if (!user) return;
 
+    // Auto-update stale leads
+    try {
+      await supabase.rpc("auto_update_stale_leads");
+    } catch (e) {
+      // Ignore if function doesn't exist or fails
+    }
+
     let query = supabase
       .from("leads")
       .select("*")
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
-    // Non-admin users only see their own leads
     if (!hasAdminAccess) {
       query = query.eq("submitted_by", user.id);
     }
@@ -72,6 +82,10 @@ export const useLeads = () => {
 
     const enrichedLeads: DbLead[] = (leadsData || []).map((lead) => ({
       ...lead,
+      item: (lead as any).item || null,
+      diagnosis: (lead as any).diagnosis || null,
+      doctor_name: (lead as any).doctor_name || null,
+      doctor_npi: (lead as any).doctor_npi || null,
       documents: docsMap.get(lead.id) || [],
     }));
 
@@ -99,11 +113,9 @@ export const useLeads = () => {
     patientName: string;
     dob: string;
     phone: string;
-    email: string;
     address: string;
-    medicareId: string;
-    ppoId: string;
-    dmeItems: string;
+    item: string;
+    diagnosis: string;
     documents: { name: string; url: string }[];
   }) => {
     if (!user) return;
@@ -114,13 +126,14 @@ export const useLeads = () => {
         patient_name: data.patientName,
         dob: data.dob,
         phone: data.phone,
-        email: data.email,
         address: data.address,
-        medicare_id: data.medicareId,
-        ppo_id: data.ppoId,
-        dme_items: data.dmeItems,
+        medicare_id: "N/A",
+        item: data.item,
+        diagnosis: data.diagnosis,
+        doctor_name: profile?.full_name || "Unknown",
+        doctor_npi: profile?.npi || "",
         submitted_by: user.id,
-      })
+      } as any)
       .select()
       .single();
 
@@ -207,7 +220,6 @@ export const useLeads = () => {
       .not("deleted_at", "is", null)
       .order("deleted_at", { ascending: false });
 
-    // Non-admin users only see their own trashed leads
     if (!hasAdminAccess) {
       query = query.eq("submitted_by", user.id);
     }
@@ -225,6 +237,10 @@ export const useLeads = () => {
 
     return (leadsData || []).map((lead) => ({
       ...lead,
+      item: (lead as any).item || null,
+      diagnosis: (lead as any).diagnosis || null,
+      doctor_name: (lead as any).doctor_name || null,
+      doctor_npi: (lead as any).doctor_npi || null,
       documents: docsMap.get(lead.id) || [],
     })) as DbLead[];
   }, [user, hasAdminAccess]);

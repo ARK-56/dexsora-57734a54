@@ -1,14 +1,17 @@
 export type LeadStatus = 
+  | "New Lead"
   | "Pending"
-  | "Open"
-  | "Auth"
-  | "Approved"
+  | "Eligible"
+  | "Not Eligible"
+  | "Need Additional Documents"
+  | "Shipped"
   | "Delivered"
-  | "Closed"
-  | "Denied (SNS)"
-  | "Denied (Auth)";
+  | "Auth Applied"
+  | "Billed"
+  | "Paid"
+  | "Denied";
 
-export type UserRole = "doctor" | "admin" | "eligibility" | "auth" | "logistics";
+export type UserRole = "doctor" | "admin" | "eligibility" | "shipment" | "billing";
 
 export interface Note {
   id: string;
@@ -36,6 +39,8 @@ export interface Lead {
   address: string;
   medicareId: string;
   ppoId: string;
+  item?: string;
+  diagnosis?: string;
   dmeItems?: string;
   status: LeadStatus;
   denialReason?: string;
@@ -44,4 +49,6 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
   trackingNumber?: string;
+  doctorName?: string;
+  doctorNpi?: string;
 }

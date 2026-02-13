@@ -5,14 +5,15 @@ import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
-const ADMIN_ACCESS_ROLES: AppRole[] = ["admin", "eligibility", "auth_team"];
+const ADMIN_ACCESS_ROLES: AppRole[] = ["admin", "eligibility", "auth_team", "shipment", "billing"];
 
 interface AuthContextType {
   user: User | null;
-  profile: { full_name: string | null; email: string | null; avatar_url: string | null } | null;
+  profile: { full_name: string | null; email: string | null; avatar_url: string | null; npi: string | null } | null;
   roles: AppRole[];
   isAdmin: boolean;
   hasAdminAccess: boolean;
+  isDoctor: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -29,13 +30,13 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<{ full_name: string | null; email: string | null; avatar_url: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ full_name: string | null; email: string | null; avatar_url: string | null; npi: string | null } | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async (userId: string) => {
     const [profileRes, rolesRes] = await Promise.all([
-      supabase.from("profiles").select("full_name, email, avatar_url").eq("user_id", userId).maybeSingle(),
+      supabase.from("profiles").select("full_name, email, avatar_url, npi").eq("user_id", userId).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
     if (profileRes.data) setProfile(profileRes.data);
@@ -81,9 +82,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAdmin = roles.includes("admin");
   const hasAdminAccess = roles.some((r) => ADMIN_ACCESS_ROLES.includes(r));
+  const isDoctor = roles.includes("doctor");
 
   return (
-    <AuthContext.Provider value={{ user, profile, roles, isAdmin, hasAdminAccess, loading, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, roles, isAdmin, hasAdminAccess, isDoctor, loading, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

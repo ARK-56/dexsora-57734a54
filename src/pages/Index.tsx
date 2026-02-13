@@ -14,7 +14,7 @@ import { Filter, Trash2 } from "lucide-react";
 import { useLeads, DbLead } from "@/hooks/useLeads";
 
 const Index = () => {
-  const { user, loading, hasAdminAccess, roles } = useAuth();
+  const { user, loading, hasAdminAccess, isDoctor, roles } = useAuth();
   const { leads, loading: leadsLoading, createLead, updateLeadStatus, softDeleteLeads, permanentDeleteLeads } = useLeads();
   const [selectedLead, setSelectedLead] = useState<DbLead | null>(null);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
@@ -34,6 +34,10 @@ const Index = () => {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  // Only doctors can access the doctor panel (Index page)
+  // Admin panel users should use /admin
+  if (hasAdminAccess && !isDoctor) return <Navigate to="/admin" replace />;
+
   const currentRole = roles[0] || "doctor";
 
   const filteredLeads = leads.filter((l) => {
@@ -46,11 +50,9 @@ const Index = () => {
     patientName: string;
     dob: string;
     phone: string;
-    email: string;
     address: string;
-    medicareId: string;
-    ppoId: string;
-    dmeItems: string;
+    item: string;
+    diagnosis: string;
     documents: { name: string; url: string }[];
   }) => {
     await createLead(data);
@@ -92,10 +94,9 @@ const Index = () => {
   };
 
   const allStatuses: (LeadStatus | "All")[] = [
-    "All", "Pending", "Open", "Auth", "Approved", "Delivered", "Closed", "Denied (SNS)", "Denied (Auth)",
+    "All", "New Lead", "Pending", "Eligible", "Not Eligible", "Need Additional Documents",
+    "Shipped", "Delivered", "Auth Applied", "Billed", "Paid", "Denied",
   ];
-
-  const canSubmit = !hasAdminAccess;
 
   return (
     <div className="min-h-screen bg-background">
@@ -133,14 +134,12 @@ const Index = () => {
                 Delete ({selectedIds.length})
               </button>
             )}
-            {canSubmit && (
-              <button
-                onClick={() => setIsSubmitOpen(true)}
-                className="shrink-0 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90"
-              >
-                + New Lead
-              </button>
-            )}
+            <button
+              onClick={() => setIsSubmitOpen(true)}
+              className="shrink-0 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90"
+            >
+              + New Lead
+            </button>
           </div>
         </div>
 
@@ -170,7 +169,7 @@ const Index = () => {
         lead={selectedLead}
         onClose={() => setSelectedLead(null)}
         currentRole={currentRole as any}
-        canUpdateStatus={hasAdminAccess}
+        canUpdateStatus={false}
         onUpdateStatus={handleUpdateLeadStatus}
       />
       <SubmitLeadModal isOpen={isSubmitOpen} onClose={() => setIsSubmitOpen(false)} onSubmit={handleSubmitLead} />
