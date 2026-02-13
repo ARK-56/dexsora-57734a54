@@ -1,0 +1,195 @@
+import { useState, useEffect } from "react";
+import { X, Upload, FileText, Download, ExternalLink, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { DbLeadDocument } from "@/hooks/useLeads";
+
+interface PrescriptionPanelProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => {
+  const { user, hasAdminAccess } = useAuth();
+  const { toast } = useToast();
+  const [documents, setDocuments] = useState<(DbLeadDocument & { patient_name?: string })[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadName, setUploadName] = useState("");
+  const [selectedLeadId, setSelectedLeadId] = useState("");
+  const [leads, setLeads] = useState<{ id: string; patient_name: string }[]>([]);
+
+  const fetchDocuments = async () => {
+    setLoading(true);
+    const { data: docs } = await supabase
+      .from("lead_documents")
+      .select("*, leads!lead_documents_lead_id_fkey(patient_name)")
+      .order("created_at", { ascending: false });
+
+    const enriched = (docs || []).map((doc: any) => ({
+      ...doc,
+      patient_name: doc.leads?.patient_name || "Unknown",
+    }));
+    setDocuments(enriched);
+    setLoading(false);
+  };
+
+  const fetchLeads = async () => {
+    const { data } = await supabase
+      .from("leads")
+      .select("id, patient_name")
+      .is("deleted_at", null)
+      .order("patient_name");
+    setLeads(data || []);
+  };
+
+  useEffect(() => {
+    if (open) {
+      fetchDocuments();
+      if (hasAdminAccess) fetchLeads();
+    }
+  }, [open, hasAdminAccess]);
+
+  const handleUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !selectedLeadId || !user) return;
+    setUploading(true);
+
+    for (const file of Array.from(files)) {
+      const filePath = `${selectedLeadId}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("lead-documents")
+        .upload(filePath, file, { cacheControl: "3600", upsert: false });
+
+      if (uploadError) {
+        toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("lead-documents")
+        .getPublicUrl(filePath);
+
+      await supabase.from("lead_documents").insert({
+        lead_id: selectedLeadId,
+        name: uploadName || file.name,
+        url: urlData.publicUrl,
+        uploaded_by: user.id,
+      });
+    }
+
+    setUploading(false);
+    setUploadName("");
+    toast({ title: "Uploaded", description: "Prescription uploaded successfully." });
+    fetchDocuments();
+  };
+
+  if (!open) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-border bg-card shadow-2xl animate-fade-in overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 z-10 border-b border-border bg-card">
+          <div className="swoosh-gradient px-5 py-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary-foreground" />
+                <h2 className="font-display text-lg font-bold text-primary-foreground">Prescriptions</h2>
+              </div>
+              <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-md bg-primary-foreground/10 transition-colors hover:bg-primary-foreground/20">
+                <X className="h-4 w-4 text-primary-foreground" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {/* Admin upload section */}
+          {hasAdminAccess && (
+            <div className="rounded-lg border border-border bg-muted/10 p-4 space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Upload Prescription</h3>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Patient</label>
+                <select
+                  value={selectedLeadId}
+                  onChange={(e) => setSelectedLeadId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-ring"
+                >
+                  <option value="">Select patient...</option>
+                  {leads.map((l) => (
+                    <option key={l.id} value={l.id}>{l.patient_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Document Name</label>
+                <input
+                  type="text"
+                  value={uploadName}
+                  onChange={(e) => setUploadName(e.target.value)}
+                  placeholder="e.g. Prescription - Dr. Smith"
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <label className={`flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-4 py-3 text-sm font-medium text-primary cursor-pointer transition-colors hover:bg-primary/10 ${(!selectedLeadId || uploading) ? "opacity-50 pointer-events-none" : ""}`}>
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploading ? "Uploading..." : "Choose Files"}
+                <input type="file" multiple className="hidden" onChange={(e) => handleUpload(e.target.files)} disabled={!selectedLeadId || uploading} />
+              </label>
+            </div>
+          )}
+
+          {/* Documents list */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              All Prescriptions ({documents.length})
+            </h3>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : documents.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic py-4 text-center">No prescriptions uploaded yet</p>
+            ) : (
+              <div className="space-y-2">
+                {documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center gap-3 rounded-lg border border-border p-3 transition-all hover:bg-muted/30 hover:border-primary/30 group"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors shrink-0">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
+                      <p className="text-xs text-muted-foreground">{doc.patient_name} · {new Date(doc.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
+                      title="View"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                    <a
+                      href={doc.url}
+                      download={doc.name}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+                      title="Download"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
