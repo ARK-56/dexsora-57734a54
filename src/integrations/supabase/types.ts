@@ -261,11 +261,16 @@ export type Database = {
     }
     Functions: {
       auto_update_stale_leads: { Args: never; Returns: undefined }
+      has_admin_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      owns_lead: {
+        Args: { _lead_id: string; _user_id: string }
         Returns: boolean
       }
     }

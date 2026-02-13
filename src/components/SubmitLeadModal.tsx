@@ -60,6 +60,31 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side validation
+    const sanitize = (s: string) => s.replace(/[<>{}]/g, '').trim();
+    const sanitizedForm = {
+      patientName: sanitize(form.patientName),
+      dob: form.dob,
+      phone: sanitize(form.phone),
+      address: sanitize(form.address),
+      item: sanitize(form.item),
+      diagnosis: sanitize(form.diagnosis),
+    };
+
+    if (sanitizedForm.patientName.length > 100) {
+      toast({ title: "Validation Error", description: "Patient name must be under 100 characters.", variant: "destructive" });
+      return;
+    }
+    if (sanitizedForm.phone && !/^[\d\s()+-]+$/.test(sanitizedForm.phone)) {
+      toast({ title: "Validation Error", description: "Invalid phone number format.", variant: "destructive" });
+      return;
+    }
+    if (sanitizedForm.address.length > 300) {
+      toast({ title: "Validation Error", description: "Address must be under 300 characters.", variant: "destructive" });
+      return;
+    }
+
     setUploading(true);
     setUploadProgress(0);
 
@@ -92,7 +117,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
       setUploadProgress(Math.round(((i + 1) / files.length) * 100));
     }
 
-    onSubmit({ ...form, documents: uploadedDocs });
+    onSubmit({ ...sanitizedForm, documents: uploadedDocs });
     setForm({ patientName: "", dob: "", phone: "", address: "", item: "", diagnosis: "" });
     setDobDate(undefined);
     setFiles([]);
