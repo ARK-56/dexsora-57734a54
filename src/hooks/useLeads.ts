@@ -33,17 +33,26 @@ export interface DbLeadDocument {
 }
 
 export const useLeads = () => {
-  const { user } = useAuth();
+  const { user, hasAdminAccess } = useAuth();
   const { toast } = useToast();
   const [leads, setLeads] = useState<DbLead[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLeads = useCallback(async () => {
-    const { data: leadsData, error: leadsError } = await supabase
+    if (!user) return;
+
+    let query = supabase
       .from("leads")
       .select("*")
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
+
+    // Non-admin users only see their own leads
+    if (!hasAdminAccess) {
+      query = query.eq("submitted_by", user.id);
+    }
+
+    const { data: leadsData, error: leadsError } = await query;
 
     if (leadsError) {
       console.error("Error fetching leads:", leadsError);
@@ -68,7 +77,7 @@ export const useLeads = () => {
 
     setLeads(enrichedLeads);
     setLoading(false);
-  }, []);
+  }, [user, hasAdminAccess]);
 
   useEffect(() => {
     if (!user) return;
@@ -190,11 +199,20 @@ export const useLeads = () => {
   };
 
   const fetchTrashedLeads = useCallback(async () => {
-    const { data: leadsData } = await supabase
+    if (!user) return [];
+
+    let query = supabase
       .from("leads")
       .select("*")
       .not("deleted_at", "is", null)
       .order("deleted_at", { ascending: false });
+
+    // Non-admin users only see their own trashed leads
+    if (!hasAdminAccess) {
+      query = query.eq("submitted_by", user.id);
+    }
+
+    const { data: leadsData } = await query;
 
     const { data: docsData } = await supabase.from("lead_documents").select("*");
 
@@ -209,7 +227,7 @@ export const useLeads = () => {
       ...lead,
       documents: docsMap.get(lead.id) || [],
     })) as DbLead[];
-  }, []);
+  }, [user, hasAdminAccess]);
 
   return { leads, loading, createLead, updateLeadStatus, softDeleteLeads, permanentDeleteLeads, restoreLeads, fetchTrashedLeads, refreshLeads: fetchLeads };
 };
