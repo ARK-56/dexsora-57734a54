@@ -88,6 +88,7 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string
+          deleted_at: string | null
           denial_reason: string | null
           dme_items: string | null
           dob: string
@@ -105,6 +106,7 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string
+          deleted_at?: string | null
           denial_reason?: string | null
           dme_items?: string | null
           dob: string
@@ -122,6 +124,7 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string
+          deleted_at?: string | null
           denial_reason?: string | null
           dme_items?: string | null
           dob?: string

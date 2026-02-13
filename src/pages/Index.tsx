@@ -6,6 +6,7 @@ import { PatientTable } from "@/components/PatientTable";
 import { PatientDrawer } from "@/components/PatientDrawer";
 import { SubmitLeadModal } from "@/components/SubmitLeadModal";
 import { LifecycleBar } from "@/components/LifecycleBar";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Filter, Trash2 } from "lucide-react";
@@ -13,12 +14,13 @@ import { useLeads, DbLead } from "@/hooks/useLeads";
 
 const Index = () => {
   const { user, loading, hasAdminAccess, roles } = useAuth();
-  const { leads, loading: leadsLoading, createLead, updateLeadStatus, deleteLeads } = useLeads();
+  const { leads, loading: leadsLoading, createLead, updateLeadStatus, softDeleteLeads, permanentDeleteLeads } = useLeads();
   const [selectedLead, setSelectedLead] = useState<DbLead | null>(null);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "All">("All");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   if (loading) {
     return (
@@ -59,10 +61,18 @@ const Index = () => {
     }
   };
 
-  const handleDeleteSelected = async () => {
+  const handleSoftDelete = async () => {
     if (selectedIds.length === 0) return;
-    await deleteLeads(selectedIds);
+    await softDeleteLeads(selectedIds);
     setSelectedIds([]);
+    setDeleteDialogOpen(false);
+  };
+
+  const handlePermanentDelete = async () => {
+    if (selectedIds.length === 0) return;
+    await permanentDeleteLeads(selectedIds);
+    setSelectedIds([]);
+    setDeleteDialogOpen(false);
   };
 
   const toggleSelect = (id: string) => {
@@ -114,7 +124,7 @@ const Index = () => {
           <div className="flex items-center gap-2">
             {selectedIds.length > 0 && (
               <button
-                onClick={handleDeleteSelected}
+                onClick={() => setDeleteDialogOpen(true)}
                 className="flex items-center gap-1.5 shrink-0 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm transition-all hover:opacity-90"
               >
                 <Trash2 className="h-4 w-4" />
@@ -162,6 +172,13 @@ const Index = () => {
         onUpdateStatus={handleUpdateLeadStatus}
       />
       <SubmitLeadModal isOpen={isSubmitOpen} onClose={() => setIsSubmitOpen(false)} onSubmit={handleSubmitLead} />
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        count={selectedIds.length}
+        onSoftDelete={handleSoftDelete}
+        onPermanentDelete={handlePermanentDelete}
+      />
     </div>
   );
 };
