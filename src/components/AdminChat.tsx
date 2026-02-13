@@ -30,12 +30,18 @@ interface ProfileInfo {
   email: string | null;
 }
 
+interface RoleInfo {
+  user_id: string;
+  role: string;
+}
+
 export const AdminChat = () => {
   const { user, profile } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvo, setActiveConvo] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [adminProfiles, setAdminProfiles] = useState<ProfileInfo[]>([]);
   const [allProfiles, setAllProfiles] = useState<ProfileInfo[]>([]);
   const [messageText, setMessageText] = useState("");
   const [showNewConvo, setShowNewConvo] = useState(false);
@@ -43,6 +49,7 @@ export const AdminChat = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [groupName, setGroupName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchConversations = useCallback(async () => {
@@ -55,11 +62,28 @@ export const AdminChat = () => {
   }, []);
 
   const fetchProfiles = useCallback(async () => {
-    const { data } = await supabase
+    // Fetch all profiles for name display
+    const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, full_name, email");
-    setAllProfiles((data as ProfileInfo[]) || []);
-  }, []);
+    setAllProfiles((profiles as ProfileInfo[]) || []);
+
+    // Fetch roles to filter admin-access users only
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id, role");
+    
+    const adminUserIds = new Set(
+      ((roles as RoleInfo[]) || [])
+        .filter((r) => ["admin", "eligibility", "auth_team", "shipment", "billing"].includes(r.role))
+        .map((r) => r.user_id)
+    );
+
+    const admins = ((profiles as ProfileInfo[]) || []).filter(
+      (p) => adminUserIds.has(p.user_id) && p.user_id !== user?.id
+    );
+    setAdminProfiles(admins);
+  }, [user?.id]);
 
   const fetchParticipants = useCallback(async () => {
     const { data } = await supabase
@@ -74,7 +98,6 @@ export const AdminChat = () => {
     fetchParticipants();
   }, [fetchConversations, fetchProfiles, fetchParticipants]);
 
-  // Fetch messages for active conversation
   useEffect(() => {
     if (!activeConvo) {
       setMessages([]);
@@ -91,7 +114,6 @@ export const AdminChat = () => {
     fetchMessages();
   }, [activeConvo?.id]);
 
-  // Realtime messages
   useEffect(() => {
     if (!activeConvo) return;
     const channel = supabase
@@ -108,7 +130,6 @@ export const AdminChat = () => {
     return () => { supabase.removeChannel(channel); };
   }, [activeConvo?.id]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -120,7 +141,6 @@ export const AdminChat = () => {
 
   const getConvoDisplayName = (convo: Conversation) => {
     if (convo.is_group && convo.name) return convo.name;
-    // For DMs, show the other person's name
     const convoParticipants = participants.filter((p) => p.conversation_id === convo.id);
     const other = convoParticipants.find((p) => p.user_id !== user?.id);
     return other ? getProfileName(other.user_id) : "Chat";
@@ -135,7 +155,6 @@ export const AdminChat = () => {
       sender_id: user.id,
       content: text,
     });
-    // Update conversation updated_at
     await supabase
       .from("chat_conversations")
       .update({ updated_at: new Date().toISOString() })
@@ -143,53 +162,66 @@ export const AdminChat = () => {
   };
 
   const createConversation = async () => {
-    if (!user) return;
-    if (selectedUsers.length === 0) return;
+    if (!user || selectedUsers.length === 0 || creating) return;
+    setCreating(true);
 
-    // For DM, check if conversation already exists
-    if (newConvoType === "dm" && selectedUsers.length === 1) {
-      const existingDm = conversations.find((c) => {
-        if (c.is_group) return false;
-        const convoPs = participants.filter((p) => p.conversation_id === c.id);
-        const userIds = convoPs.map((p) => p.user_id);
-        return userIds.includes(user.id) && userIds.includes(selectedUsers[0]);
-      });
-      if (existingDm) {
-        setActiveConvo(existingDm);
-        setShowNewConvo(false);
-        setSelectedUsers([]);
+    try {
+      // For DM, check if conversation already exists
+      if (newConvoType === "dm" && selectedUsers.length === 1) {
+        const existingDm = conversations.find((c) => {
+          if (c.is_group) return false;
+          const convoPs = participants.filter((p) => p.conversation_id === c.id);
+          const userIds = convoPs.map((p) => p.user_id);
+          return userIds.includes(user.id) && userIds.includes(selectedUsers[0]);
+        });
+        if (existingDm) {
+          setActiveConvo(existingDm);
+          setShowNewConvo(false);
+          setSelectedUsers([]);
+          setCreating(false);
+          return;
+        }
+      }
+
+      const isGroup = newConvoType === "group";
+      const { data: convo, error: convoError } = await supabase
+        .from("chat_conversations")
+        .insert({
+          name: isGroup ? groupName || "Group Chat" : null,
+          is_group: isGroup,
+          created_by: user.id,
+        })
+        .select()
+        .single();
+
+      if (convoError) {
+        console.error("Error creating conversation:", convoError);
+        setCreating(false);
         return;
       }
+
+      // Add all selected users + self as participants
+      const allParticipantIds = [...new Set([user.id, ...selectedUsers])];
+      const { error: partError } = await supabase.from("chat_participants").insert(
+        allParticipantIds.map((uid) => ({
+          conversation_id: convo.id,
+          user_id: uid,
+        }))
+      );
+
+      if (partError) {
+        console.error("Error adding participants:", partError);
+      }
+
+      setShowNewConvo(false);
+      setSelectedUsers([]);
+      setGroupName("");
+      await fetchConversations();
+      await fetchParticipants();
+      setActiveConvo(convo as Conversation);
+    } finally {
+      setCreating(false);
     }
-
-    const isGroup = newConvoType === "group";
-    const { data: convo } = await supabase
-      .from("chat_conversations")
-      .insert({
-        name: isGroup ? groupName || "Group Chat" : null,
-        is_group: isGroup,
-        created_by: user.id,
-      })
-      .select()
-      .single();
-
-    if (!convo) return;
-
-    // Add all selected users + self as participants
-    const allParticipantIds = [...new Set([user.id, ...selectedUsers])];
-    await supabase.from("chat_participants").insert(
-      allParticipantIds.map((uid) => ({
-        conversation_id: convo.id,
-        user_id: uid,
-      }))
-    );
-
-    setShowNewConvo(false);
-    setSelectedUsers([]);
-    setGroupName("");
-    await fetchConversations();
-    await fetchParticipants();
-    setActiveConvo(convo as Conversation);
   };
 
   const toggleUserSelection = (userId: string) => {
@@ -197,8 +229,6 @@ export const AdminChat = () => {
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
-
-  const otherProfiles = allProfiles.filter((p) => p.user_id !== user?.id);
 
   const initials = (name: string) =>
     name.split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -341,7 +371,6 @@ export const AdminChat = () => {
               </div>
 
               <div className="p-5 space-y-4">
-                {/* Type toggle */}
                 <div className="flex gap-1 rounded-lg border border-border p-1">
                   <button
                     onClick={() => { setNewConvoType("dm"); setSelectedUsers([]); }}
@@ -376,40 +405,44 @@ export const AdminChat = () => {
                     Select {newConvoType === "dm" ? "a user" : "users"}
                   </p>
                   <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-border p-2">
-                    {otherProfiles.map((p) => (
-                      <button
-                        key={p.user_id}
-                        onClick={() => {
-                          if (newConvoType === "dm") {
-                            setSelectedUsers([p.user_id]);
-                          } else {
-                            toggleUserSelection(p.user_id);
-                          }
-                        }}
-                        className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors ${
-                          selectedUsers.includes(p.user_id)
-                            ? "bg-primary/10 text-primary"
-                            : "hover:bg-muted text-foreground"
-                        }`}
-                      >
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
-                          {initials(p.full_name || p.email || "?")}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium truncate">{p.full_name || "No name"}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{p.email}</p>
-                        </div>
-                      </button>
-                    ))}
+                    {adminProfiles.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-4">No admin users found</p>
+                    ) : (
+                      adminProfiles.map((p) => (
+                        <button
+                          key={p.user_id}
+                          onClick={() => {
+                            if (newConvoType === "dm") {
+                              setSelectedUsers([p.user_id]);
+                            } else {
+                              toggleUserSelection(p.user_id);
+                            }
+                          }}
+                          className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors ${
+                            selectedUsers.includes(p.user_id)
+                              ? "bg-primary/10 text-primary"
+                              : "hover:bg-muted text-foreground"
+                          }`}
+                        >
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                            {initials(p.full_name || p.email || "?")}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium truncate">{p.full_name || "No name"}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{p.email}</p>
+                          </div>
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
 
                 <button
                   onClick={createConversation}
-                  disabled={selectedUsers.length === 0}
+                  disabled={selectedUsers.length === 0 || creating}
                   className="w-full h-9 rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
-                  {newConvoType === "dm" ? "Start Chat" : "Create Group"}
+                  {creating ? "Creating..." : newConvoType === "dm" ? "Start Chat" : "Create Group"}
                 </button>
               </div>
             </div>

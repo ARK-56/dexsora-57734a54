@@ -11,7 +11,11 @@ interface Notification {
   created_at: string;
 }
 
-export const NotificationPopup = () => {
+interface NotificationPopupProps {
+  onNotificationClick?: (patientName: string) => void;
+}
+
+export const NotificationPopup = ({ onNotificationClick }: NotificationPopupProps) => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -60,6 +64,21 @@ export const NotificationPopup = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 
+  const handleNotificationClick = async (n: Notification) => {
+    // Mark as read
+    if (!n.is_read) {
+      await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
+      setNotifications((prev) => prev.map((notif) => notif.id === n.id ? { ...notif, is_read: true } : notif));
+    }
+
+    // Extract patient name from message like "Lead for John Doe changed from..."
+    const match = n.message.match(/Lead for (.+?) changed from/);
+    if (match && onNotificationClick) {
+      onNotificationClick(match[1]);
+      setIsOpen(false);
+    }
+  };
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -93,7 +112,8 @@ export const NotificationPopup = () => {
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`border-b border-border px-4 py-3 last:border-0 ${
+                  onClick={() => handleNotificationClick(n)}
+                  className={`border-b border-border px-4 py-3 last:border-0 cursor-pointer transition-colors hover:bg-muted/30 ${
                     !n.is_read ? "bg-primary/5" : ""
                   }`}
                 >

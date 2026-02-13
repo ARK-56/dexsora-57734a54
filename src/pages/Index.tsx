@@ -100,7 +100,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} onOpenPrescriptions={() => setPrescriptionOpen(true)} />
+      <Header
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onOpenPrescriptions={() => setPrescriptionOpen(true)}
+        onNotificationClick={(patientName) => {
+          const lead = leads.find((l) => l.patient_name === patientName);
+          if (lead) setSelectedLead(lead);
+        }}
+      />
 
       <main className="mx-auto max-w-7xl px-4 py-6 lg:px-6 space-y-6">
         <LifecycleBar />
