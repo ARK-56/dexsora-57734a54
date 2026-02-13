@@ -166,32 +166,47 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                     Date of Birth <span className="text-destructive">*</span>
                   </label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className={cn(
-                          "h-10 w-full justify-start text-left font-normal border-input bg-background",
-                          !dobDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dobDate ? format(dobDate, "PPP") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-[60]" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dobDate}
-                        onSelect={handleDateSelect}
-                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <input type="hidden" name="dob" value={form.dob} required />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={form.dob}
+                      onChange={(e) => {
+                        setForm((p) => ({ ...p, dob: e.target.value }));
+                        // Try to parse typed date
+                        const parsed = new Date(e.target.value);
+                        if (!isNaN(parsed.getTime()) && parsed < new Date()) {
+                          setDobDate(parsed);
+                        } else {
+                          setDobDate(undefined);
+                        }
+                      }}
+                      placeholder="MM/DD/YYYY"
+                      required
+                      className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/60"
+                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 shrink-0 border-input"
+                        >
+                          <CalendarIcon className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[60]" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={dobDate}
+                          onSelect={handleDateSelect}
+                          disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
                 <Field label="Phone No" value={form.phone} onChange={set("phone")} required placeholder="(555) 000-0000" />
                 <div className="col-span-2">
