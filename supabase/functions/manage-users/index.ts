@@ -13,6 +13,28 @@ const isValidPassword = (pw: string) => pw.length >= 8 && pw.length <= 128;
 const VALID_STAFF_ROLES = ["eligibility", "shipment", "billing"];
 const VALID_ALL_ROLES = ["admin", "doctor", "eligibility", "auth_team", "shipment", "billing"];
 
+// Audit log helper
+async function logAudit(
+  supabaseAdmin: any,
+  userId: string,
+  action: string,
+  entityType: string,
+  entityId: string | null,
+  details: Record<string, any> = {}
+) {
+  try {
+    await supabaseAdmin.rpc("insert_audit_log", {
+      _user_id: userId,
+      _action: action,
+      _entity_type: entityType,
+      _entity_id: entityId,
+      _details: details,
+    });
+  } catch (e) {
+    console.error("Audit log failed:", e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -64,6 +86,10 @@ Deno.serve(async (req) => {
 
       if (roleError) throw roleError;
 
+      await logAudit(supabaseAdmin, caller.id, "create_user", "user", newUser.user.id, {
+        email, role, full_name: fullName,
+      });
+
       return new Response(
         JSON.stringify({ message: "User created", userId: newUser.user.id }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -100,6 +126,10 @@ Deno.serve(async (req) => {
 
       if (profileError) throw profileError;
 
+      await logAudit(supabaseAdmin, caller.id, "create_doctor", "user", newUser.user.id, {
+        email, full_name: fullName, npi,
+      });
+
       return new Response(
         JSON.stringify({ message: "Doctor created", userId: newUser.user.id }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -110,7 +140,6 @@ Deno.serve(async (req) => {
       const { userId, fullName, email, role } = payload;
       if (!userId) throw new Error("Missing userId");
 
-      // Validate UUID format
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
         throw new Error("Invalid userId format");
       }
@@ -119,15 +148,16 @@ Deno.serve(async (req) => {
       if (email !== undefined && !isValidEmail(email)) throw new Error("Invalid email format");
       if (role && !VALID_ALL_ROLES.includes(role)) throw new Error("Invalid role");
 
-      // Prevent admin from removing their own admin role
       if (userId === caller.id && role && role !== "admin") {
         throw new Error("Cannot remove your own admin role");
       }
 
+      const changes: Record<string, any> = {};
+
       if (fullName !== undefined || email !== undefined) {
         const updates: any = {};
-        if (fullName !== undefined) updates.full_name = fullName;
-        if (email !== undefined) updates.email = email;
+        if (fullName !== undefined) { updates.full_name = fullName; changes.full_name = fullName; }
+        if (email !== undefined) { updates.email = email; changes.email = email; }
 
         const { error: profileError } = await supabaseAdmin
           .from("profiles")
@@ -138,6 +168,11 @@ Deno.serve(async (req) => {
       }
 
       if (role) {
+        // Get old role for audit
+        const { data: oldRoles } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", userId);
+        changes.old_role = oldRoles?.[0]?.role;
+        changes.new_role = role;
+
         await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
         const { error: roleError } = await supabaseAdmin
           .from("user_roles")
@@ -145,6 +180,8 @@ Deno.serve(async (req) => {
 
         if (roleError) throw roleError;
       }
+
+      await logAudit(supabaseAdmin, caller.id, "update_user", "user", userId, changes);
 
       return new Response(
         JSON.stringify({ message: "User updated" }),

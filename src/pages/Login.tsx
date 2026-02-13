@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
+
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 60_000; // 1 minute
 
 const Login = () => {
   const { user, loading, signIn } = useAuth();
@@ -9,6 +12,9 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const attemptsRef = useRef(0);
+  const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (loading) {
     return (
@@ -22,10 +28,32 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (locked) {
+      setError("Too many failed attempts. Please wait 1 minute before trying again.");
+      return;
+    }
+
     setError(null);
     setSubmitting(true);
     const { error } = await signIn(email, password);
-    if (error) setError(error);
+
+    if (error) {
+      attemptsRef.current += 1;
+      if (attemptsRef.current >= MAX_ATTEMPTS) {
+        setLocked(true);
+        setError(`Too many failed attempts. Please wait 1 minute before trying again.`);
+        lockTimerRef.current = setTimeout(() => {
+          setLocked(false);
+          attemptsRef.current = 0;
+          setError(null);
+        }, LOCKOUT_DURATION_MS);
+      } else {
+        setError(`${error} (${MAX_ATTEMPTS - attemptsRef.current} attempts remaining)`);
+      }
+    } else {
+      attemptsRef.current = 0;
+    }
     setSubmitting(false);
   };
 
@@ -71,10 +99,10 @@ const Login = () => {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || locked}
             className="h-10 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {submitting ? "Signing in..." : "Sign In"}
+            {locked ? "Locked — Wait 1 min" : submitting ? "Signing in..." : "Sign In"}
           </button>
         </form>
       </div>
