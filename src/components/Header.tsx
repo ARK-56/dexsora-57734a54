@@ -4,18 +4,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationPopup } from "./NotificationPopup";
 import { ThemeToggle } from "./ThemeToggle";
-import { Search, LogOut, Settings, FileText, Trash2 } from "lucide-react";
+import { Search, LogOut, Settings, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import dexsoraLogo from "@/assets/dexsora-logo.png";
 
 interface HeaderProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
-  onOpenPrescriptions?: () => void;
   onNotificationClick?: (patientName: string) => void;
 }
 
-export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, onNotificationClick }: HeaderProps) => {
+export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }: HeaderProps) => {
   const { user, profile, hasAdminAccess, signOut } = useAuth();
   const [trashCount, setTrashCount] = useState(0);
   const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState<string | null>(null);
@@ -81,14 +80,6 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, 
 
           </div>
 
-          <button
-            onClick={onOpenPrescriptions}
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20"
-            title="Prescriptions">
-
-            <FileText className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Prescriptions</span>
-          </button>
 
           <Link
             to="/trash"
