@@ -7,10 +7,10 @@ import { PatientDrawer } from "@/components/PatientDrawer";
 import { SubmitLeadModal } from "@/components/SubmitLeadModal";
 import { LifecycleBar } from "@/components/LifecycleBar";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import { PrescriptionPanel } from "@/components/PrescriptionPanel";
+import { InlinePrescriptions } from "@/components/InlinePrescriptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { Filter, Trash2, FileText } from "lucide-react";
+import { Filter, Trash2 } from "lucide-react";
 import { useLeads, DbLead } from "@/hooks/useLeads";
 
 const Index = () => {
@@ -22,7 +22,6 @@ const Index = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [prescriptionOpen, setPrescriptionOpen] = useState(false);
 
   if (loading) {
     return (
@@ -33,9 +32,6 @@ const Index = () => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-
-  // Only doctors can access the doctor panel (Index page)
-  // Admin panel users should use /admin
   if (hasAdminAccess && !isDoctor) return <Navigate to="/admin" replace />;
 
   const currentRole = roles[0] || "doctor";
@@ -109,83 +105,87 @@ const Index = () => {
         }}
       />
 
-      <main className="mx-auto max-w-7xl px-4 py-6 lg:px-6 space-y-6">
-        <LifecycleBar />
-        <StatsBar leads={leads} />
+      <main className="mx-auto max-w-[1400px] px-4 py-6 lg:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+          {/* Left column: Leads */}
+          <div className="space-y-6 min-w-0">
+            <LifecycleBar />
+            <StatsBar leads={leads} />
 
-        <button
-          onClick={() => setPrescriptionOpen(true)}
-          className="flex items-center gap-1.5 w-fit rounded-lg swoosh-gradient px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-        >
-          <FileText className="h-4 w-4" />
-          Prescriptions
-        </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                <Filter className="h-4 w-4 text-muted-foreground shrink-0 mr-1" />
+                {allStatuses.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStatusFilter(s)}
+                    className={`shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition-all ${
+                      statusFilter === s
+                        ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                        : "border-border bg-card text-muted-foreground hover:bg-muted hover:border-muted-foreground/30"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <Filter className="h-4 w-4 text-muted-foreground shrink-0 mr-1" />
-            {allStatuses.map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition-all ${
-                  statusFilter === s
-                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                    : "border-border bg-card text-muted-foreground hover:bg-muted hover:border-muted-foreground/30"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
+              <div className="flex items-center gap-2">
+                {selectedIds.length > 0 && (() => {
+                  const allNewLead = selectedIds.every((id) => {
+                    const lead = leads.find((l) => l.id === id);
+                    return lead?.status === "New Lead";
+                  });
+                  return allNewLead ? (
+                    <button
+                      onClick={() => setDeleteDialogOpen(true)}
+                      className="flex items-center gap-1.5 shrink-0 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm transition-all hover:opacity-90"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete ({selectedIds.length})
+                    </button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground italic">Cannot delete leads that have been processed</span>
+                  );
+                })()}
+                <button
+                  onClick={() => setIsSubmitOpen(true)}
+                  className="shrink-0 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90"
+                >
+                  + New Lead
+                </button>
+              </div>
+            </div>
+
+            {leadsLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            ) : (
+              <PatientTable
+                leads={filteredLeads}
+                onSelectLead={setSelectedLead}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                onToggleAll={toggleAll}
+                allSelected={selectedIds.length === filteredLeads.length && filteredLeads.length > 0}
+              />
+            )}
+
+            {!leadsLoading && filteredLeads.length === 0 && (
+              <div className="py-16 text-center">
+                <p className="text-lg text-muted-foreground">No leads found for this filter.</p>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-2">
-            {selectedIds.length > 0 && (() => {
-              const allNewLead = selectedIds.every((id) => {
-                const lead = leads.find((l) => l.id === id);
-                return lead?.status === "New Lead";
-              });
-              return allNewLead ? (
-                <button
-                  onClick={() => setDeleteDialogOpen(true)}
-                  className="flex items-center gap-1.5 shrink-0 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm transition-all hover:opacity-90"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete ({selectedIds.length})
-                </button>
-              ) : (
-                <span className="text-xs text-muted-foreground italic">Cannot delete leads that have been processed</span>
-              );
-            })()}
-            <button
-              onClick={() => setIsSubmitOpen(true)}
-              className="shrink-0 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90"
-            >
-              + New Lead
-            </button>
+          {/* Right column: Prescriptions */}
+          <div className="hidden lg:block">
+            <div className="sticky top-6">
+              <InlinePrescriptions />
+            </div>
           </div>
         </div>
-
-        {leadsLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          </div>
-        ) : (
-          <PatientTable
-            leads={filteredLeads}
-            onSelectLead={setSelectedLead}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelect}
-            onToggleAll={toggleAll}
-            allSelected={selectedIds.length === filteredLeads.length && filteredLeads.length > 0}
-          />
-        )}
-
-        {!leadsLoading && filteredLeads.length === 0 && (
-          <div className="py-16 text-center">
-            <p className="text-lg text-muted-foreground">No leads found for this filter.</p>
-          </div>
-        )}
       </main>
 
       <PatientDrawer
@@ -196,7 +196,6 @@ const Index = () => {
         onUpdateStatus={handleUpdateLeadStatus}
       />
       <SubmitLeadModal isOpen={isSubmitOpen} onClose={() => setIsSubmitOpen(false)} onSubmit={handleSubmitLead} />
-      <PrescriptionPanel open={prescriptionOpen} onClose={() => setPrescriptionOpen(false)} />
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
