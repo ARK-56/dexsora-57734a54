@@ -122,10 +122,8 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
           variant: "destructive",
         });
       } else {
-        const { data: urlData } = supabase.storage
-          .from("lead-documents")
-          .getPublicUrl(filePath);
-        uploadedDocs.push({ name: file.name, url: urlData.publicUrl });
+        // Store file path (not public URL) since bucket is private
+        uploadedDocs.push({ name: file.name, url: filePath });
       }
       
       setUploadProgress(Math.round(((i + 1) / files.length) * 100));
