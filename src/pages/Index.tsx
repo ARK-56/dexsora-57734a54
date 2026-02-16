@@ -10,7 +10,7 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { PrescriptionPanel } from "@/components/PrescriptionPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { Filter, Trash2 } from "lucide-react";
+import { Filter, Trash2, FileText } from "lucide-react";
 import { useLeads, DbLead } from "@/hooks/useLeads";
 
 const Index = () => {
@@ -113,6 +113,16 @@ const Index = () => {
       <main className="mx-auto max-w-7xl px-4 py-6 lg:px-6 space-y-6">
         <LifecycleBar />
         <StatsBar leads={leads} />
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setPrescriptionOpen(true)}
+            className="flex h-9 items-center gap-1.5 rounded-lg swoosh-gradient px-4 text-xs font-semibold text-white transition-opacity hover:opacity-90 shadow-sm"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Prescriptions
+          </button>
+        </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">

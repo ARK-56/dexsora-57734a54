@@ -73,6 +73,7 @@ const AdminPanel = () => {
   const [editForm, setEditForm] = useState({ fullName: "", email: "", role: "" });
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"users" | "leads" | "chat">("leads");
+  const [leadsSubTab, setLeadsSubTab] = useState<"all" | "completed" | "denied" | "postpay" | "billed">("all");
   const [noteModal, setNoteModal] = useState<{ leadId: string; patientName: string } | null>(null);
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
@@ -319,33 +320,33 @@ const AdminPanel = () => {
         {/* Stats - only for admin */}
         {isAdmin && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="flex items-center gap-3 rounded-xl swoosh-gradient p-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
                 <Users className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold font-display text-foreground">{profiles.length}</p>
-                <p className="text-xs text-muted-foreground">Total Users</p>
+                <p className="text-2xl font-bold font-display text-white">{profiles.length}</p>
+                <p className="text-xs text-white/80">Total Users</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
+            <div className="flex items-center gap-3 rounded-xl swoosh-gradient p-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
                 <FileText className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold font-display text-foreground">{leads.length}</p>
-                <p className="text-xs text-muted-foreground">Total Leads</p>
+                <p className="text-2xl font-bold font-display text-white">{leads.length}</p>
+                <p className="text-xs text-white/80">Total Leads</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
+            <div className="flex items-center gap-3 rounded-xl swoosh-gradient p-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
                 <Shield className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold font-display text-foreground">
+                <p className="text-2xl font-bold font-display text-white">
                   {userRoles.filter((r) => r.role === "admin").length}
                 </p>
-                <p className="text-xs text-muted-foreground">Admins</p>
+                <p className="text-xs text-white/80">Admins</p>
               </div>
             </div>
           </div>
@@ -381,83 +382,116 @@ const AdminPanel = () => {
 
         {/* Leads Tab */}
         {activeTab === "leads" && (
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
-            {leadsLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
-              </div>
-            ) : leads.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">No leads yet.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Patient</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Doctor</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Item</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Docs</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leads.map((lead, idx) => {
-                      const availStatuses = availableStatusesForRole(lead.status);
-                      return (
-                        <tr key={lead.id} className={`border-b border-border transition-colors hover:bg-muted/30 ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
-                          <td className="px-4 py-3 cursor-pointer" onClick={() => setSelectedLead(lead)}>
-                            <p className="text-sm font-semibold text-primary hover:underline">{lead.patient_name}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="text-sm font-medium text-foreground">{lead.doctor_name || "—"}</p>
-                            {lead.doctor_npi && <p className="text-xs text-muted-foreground">NPI: {lead.doctor_npi}</p>}
-                          </td>
-                          <td className="px-4 py-3">
-                            <StatusBadge status={lead.status as LeadStatus} />
-                          </td>
-                          <td className="px-4 py-3 text-sm text-foreground">{lead.item || lead.dme_items || "—"}</td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
-                            {lead.documents.length > 0 ? `${lead.documents.length} file(s)` : "—"}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
-                            {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              {availStatuses.length > 0 ? (
-                                <select
-                                  value={lead.status}
-                                  onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value)}
-                                  className="h-8 rounded-lg border border-input bg-background px-2 text-xs text-foreground outline-none focus:border-primary"
-                                >
-                                  <option value={lead.status}>{lead.status}</option>
-                                  {availStatuses.filter(s => s !== lead.status).map((s) => (
-                                    <option key={s} value={s}>{s}</option>
-                                  ))}
-                                </select>
-                              ) : (
-                                <span className="text-xs text-muted-foreground italic">No actions</span>
-                              )}
-                              {lead.status === "Need Additional Documents" && (
-                                <button
-                                  onClick={() => setNoteModal({ leadId: lead.id, patientName: lead.patient_name })}
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
-                                  title="Add note"
-                                >
-                                  <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
+          <div className="space-y-4">
+            {/* Sub-tabs for lead categories */}
+            <div className="flex gap-1 overflow-x-auto pb-1">
+              {([
+                { key: "all" as const, label: "All Leads", count: leads.length },
+                { key: "completed" as const, label: "Completed Cases", count: leads.filter(l => l.status === "Delivered").length },
+                { key: "denied" as const, label: "Denied Cases", count: leads.filter(l => l.status === "Denied").length },
+                { key: "postpay" as const, label: "Post Pay Requests", count: leads.filter(l => l.status === "Auth Applied").length },
+                { key: "billed" as const, label: "Billed Cases", count: leads.filter(l => l.status === "Billed").length },
+              ]).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setLeadsSubTab(tab.key)}
+                  className={`shrink-0 rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
+                    leadsSubTab === tab.key
+                      ? "swoosh-gradient text-white shadow-sm"
+                      : "border border-border bg-card text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {tab.label} ({tab.count})
+                </button>
+              ))}
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              {leadsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+                </div>
+              ) : (() => {
+                const filteredLeads = leadsSubTab === "all" ? leads
+                  : leadsSubTab === "completed" ? leads.filter(l => l.status === "Delivered")
+                  : leadsSubTab === "denied" ? leads.filter(l => l.status === "Denied")
+                  : leadsSubTab === "postpay" ? leads.filter(l => l.status === "Auth Applied")
+                  : leads.filter(l => l.status === "Billed");
+
+                return filteredLeads.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground">No leads in this category.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/50">
+                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Patient</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Doctor</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Item</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Docs</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order Date</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                      </thead>
+                      <tbody>
+                        {filteredLeads.map((lead, idx) => {
+                          const availStatuses = availableStatusesForRole(lead.status);
+                          return (
+                            <tr key={lead.id} className={`border-b border-border transition-colors hover:bg-muted/30 ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
+                              <td className="px-4 py-3 cursor-pointer" onClick={() => setSelectedLead(lead)}>
+                                <p className="text-sm font-semibold text-primary hover:underline">{lead.patient_name}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className="text-sm font-medium text-foreground">{lead.doctor_name || "—"}</p>
+                                {lead.doctor_npi && <p className="text-xs text-muted-foreground">NPI: {lead.doctor_npi}</p>}
+                              </td>
+                              <td className="px-4 py-3">
+                                <StatusBadge status={lead.status as LeadStatus} />
+                              </td>
+                              <td className="px-4 py-3 text-sm text-foreground">{lead.item || lead.dme_items || "—"}</td>
+                              <td className="px-4 py-3 text-sm text-muted-foreground">
+                                {lead.documents.length > 0 ? `${lead.documents.length} file(s)` : "—"}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-muted-foreground">
+                                {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  {availStatuses.length > 0 ? (
+                                    <select
+                                      value={lead.status}
+                                      onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value)}
+                                      className="h-8 rounded-lg border border-input bg-background px-2 text-xs text-foreground outline-none focus:border-primary"
+                                    >
+                                      <option value={lead.status}>{lead.status}</option>
+                                      {availStatuses.filter(s => s !== lead.status).map((s) => (
+                                        <option key={s} value={s}>{s}</option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground italic">No actions</span>
+                                  )}
+                                  {lead.status === "Need Additional Documents" && (
+                                    <button
+                                      onClick={() => setNoteModal({ leadId: lead.id, patientName: lead.patient_name })}
+                                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
+                                      title="Add note"
+                                    >
+                                      <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         )}
 

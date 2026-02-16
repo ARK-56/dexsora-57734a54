@@ -83,9 +83,9 @@ export const NotificationPopup = ({ onNotificationClick }: NotificationPopupProp
     <div className="relative" ref={ref}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-input bg-background transition-colors hover:bg-muted"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10 transition-colors hover:bg-white/20"
       >
-        <Bell className="h-4 w-4 text-muted-foreground" />
+        <Bell className="h-4 w-4 text-white/90" />
         {unreadCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
             {unreadCount}

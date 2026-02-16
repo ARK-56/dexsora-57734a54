@@ -61,29 +61,29 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, 
   profile?.email?.[0]?.toUpperCase() || "?";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-card">
+    <header className="sticky top-0 z-30 border-b border-white/10 swoosh-gradient">
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 items-center justify-center rounded-lg swoosh-gradient px-2">
-            <img alt="Dexsora" className="h-6" src="/lovable-uploads/76210976-089d-4afd-a7e8-0a43c108a0a1.png" />
+          <div className="flex h-8 items-center justify-center px-1">
+            <img alt="Dexsora" className="h-7" src="/lovable-uploads/76210976-089d-4afd-a7e8-0a43c108a0a1.png" />
           </div>
         </Link>
 
         <div className="flex items-center gap-3">
           <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
             <input
               type="text"
               placeholder="Search patients..."
               value={searchQuery}
               onChange={(e) => onSearchChange?.(e.target.value)}
-              className="h-9 w-64 rounded-lg border border-input bg-background pl-9 pr-4 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" />
+              className="h-9 w-64 rounded-lg border border-white/20 bg-white/10 pl-9 pr-4 text-sm text-white placeholder:text-white/50 outline-none transition-colors focus:border-white/40 focus:ring-1 focus:ring-white/30" />
 
           </div>
 
           <button
             onClick={onOpenPrescriptions}
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20"
             title="Prescriptions">
 
             <FileText className="h-3.5 w-3.5" />
@@ -92,7 +92,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, 
 
           <Link
             to="/trash"
-            className="relative flex h-9 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+            className="relative flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20"
             title="Trash">
 
             <Trash2 className="h-3.5 w-3.5" />
@@ -107,7 +107,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, 
           {hasAdminAccess &&
           <Link
             to="/admin"
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted">
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20">
 
               <Settings className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Admin</span>
@@ -119,7 +119,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, 
 
           <Link
             to="/profile"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground overflow-hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white overflow-hidden border border-white/30"
             title="My Profile">
 
             {resolvedAvatarUrl ?
@@ -131,10 +131,10 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, 
 
           <button
             onClick={signOut}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-input bg-background transition-colors hover:bg-muted"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10 transition-colors hover:bg-white/20"
             title="Sign out">
 
-            <LogOut className="h-4 w-4 text-muted-foreground" />
+            <LogOut className="h-4 w-4 text-white/90" />
           </button>
         </div>
       </div>
