@@ -1,5 +1,5 @@
 import { LeadStatus } from "@/types/lead";
-import { ArrowRight, Sparkles, Clock, CheckCircle2, Package, Home, FileCheck, Receipt, DollarSign } from "lucide-react";
+import { ArrowRight, Sparkles, Clock, CheckCircle2, Package, Home } from "lucide-react";
 
 const steps: { status: LeadStatus; label: string; icon: React.ReactNode }[] = [
   { status: "New Lead", label: "New Lead", icon: <Sparkles className="h-3.5 w-3.5" /> },
@@ -7,9 +7,6 @@ const steps: { status: LeadStatus; label: string; icon: React.ReactNode }[] = [
   { status: "Eligible", label: "Eligible", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
   { status: "Shipped", label: "Shipped", icon: <Package className="h-3.5 w-3.5" /> },
   { status: "Delivered", label: "Delivered", icon: <Home className="h-3.5 w-3.5" /> },
-  { status: "Auth Applied", label: "Auth Applied", icon: <FileCheck className="h-3.5 w-3.5" /> },
-  { status: "Billed", label: "Billed", icon: <Receipt className="h-3.5 w-3.5" /> },
-  { status: "Paid", label: "Paid", icon: <DollarSign className="h-3.5 w-3.5" /> },
 ];
 
 export const LifecycleBar = () => {

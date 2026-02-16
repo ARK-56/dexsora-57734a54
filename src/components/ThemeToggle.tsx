@@ -31,10 +31,10 @@ export const ThemeToggle = () => {
   return (
     <button
       onClick={() => setDark((d) => !d)}
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-input bg-background transition-colors hover:bg-muted"
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10 transition-colors hover:bg-white/20"
       title={dark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {dark ? <Sun className="h-4 w-4 text-muted-foreground" /> : <Moon className="h-4 w-4 text-muted-foreground" />}
+      {dark ? <Sun className="h-4 w-4 text-white/90" /> : <Moon className="h-4 w-4 text-white/90" />}
     </button>
   );
 };
