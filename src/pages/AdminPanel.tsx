@@ -322,6 +322,15 @@ const AdminPanel = () => {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="flex items-center gap-3 rounded-xl swoosh-gradient p-5">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold font-display text-white">{leads.length}</p>
+                <p className="text-xs text-white/80">Total Leads</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl swoosh-gradient p-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
                 <Stethoscope className="h-5 w-5" />
               </div>
               <div>
@@ -329,15 +338,6 @@ const AdminPanel = () => {
                   {userRoles.filter((r) => r.role === "doctor").length}
                 </p>
                 <p className="text-xs text-white/80">Total Doctors</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-xl swoosh-gradient p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold font-display text-white">{leads.length}</p>
-                <p className="text-xs text-white/80">Total Leads</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-xl swoosh-gradient p-5">
