@@ -7,6 +7,9 @@ export type LeadStatus =
   | "Shipped"
   | "Delivered"
   | "Auth Applied"
+  | "Auth Approved"
+  | "Pre Payment Request"
+  | "Post Payment Request"
   | "Billed"
   | "Paid"
   | "Denied";
