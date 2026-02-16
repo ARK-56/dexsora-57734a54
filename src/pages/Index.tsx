@@ -89,9 +89,14 @@ const Index = () => {
     }
   };
 
-  const allStatuses: (LeadStatus | "All")[] = [
-    "All", "New Lead", "Pending", "Eligible", "Not Eligible", "Need Additional Documents",
-    "Shipped", "Delivered", "Auth Applied", "Billed", "Paid", "Denied",
+  const allStatuses: { value: LeadStatus | "All"; label: string }[] = [
+    { value: "All", label: "All" },
+    { value: "New Lead", label: "New Patient" },
+    { value: "Pending", label: "Pending" },
+    { value: "Eligible", label: "Eligible" },
+    { value: "Not Eligible", label: "Not Eligible" },
+    { value: "Need Additional Documents", label: "Need Additional Documents" },
+    { value: "Shipped", label: "Shipped" },
   ];
 
   return (
@@ -117,15 +122,15 @@ const Index = () => {
                 <Filter className="h-4 w-4 text-muted-foreground shrink-0 mr-1" />
                 {allStatuses.map((s) => (
                   <button
-                    key={s}
-                    onClick={() => setStatusFilter(s)}
+                    key={s.value}
+                    onClick={() => setStatusFilter(s.value)}
                     className={`shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition-all ${
-                      statusFilter === s
+                      statusFilter === s.value
                         ? "border-primary bg-primary text-primary-foreground shadow-sm"
                         : "border-border bg-card text-muted-foreground hover:bg-muted hover:border-muted-foreground/30"
                     }`}
                   >
-                    {s}
+                    {s.label}
                   </button>
                 ))}
               </div>
@@ -152,7 +157,7 @@ const Index = () => {
                   onClick={() => setIsSubmitOpen(true)}
                   className="shrink-0 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90"
                 >
-                  + New Lead
+                  + New Patient
                 </button>
               </div>
             </div>

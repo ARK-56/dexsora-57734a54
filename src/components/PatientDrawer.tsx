@@ -1,12 +1,13 @@
 import { DbLead } from "@/hooks/useLeads";
 import { LeadStatus, UserRole } from "@/types/lead";
 import { StatusBadge } from "./StatusBadge";
-import { X, User, MapPin, Phone, Mail, FileText, Calendar, ExternalLink, Shield, Package, Download, ClipboardList, MessageSquare } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { X, User, MapPin, Phone, Mail, FileText, Calendar, ExternalLink, Shield, Package, Download, ClipboardList, MessageSquare, Upload } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadFile } from "@/lib/downloadFile";
 import { getSignedUrl } from "@/lib/getSignedUrl";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface PatientDrawerProps {
   lead: DbLead | null;
@@ -51,9 +52,11 @@ interface LeadNote {
 
 export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onUpdateStatus }: PatientDrawerProps) => {
   const [editingStatus, setEditingStatus] = useState(false);
-  const { roles } = useAuth();
+  const { roles, hasAdminAccess, user } = useAuth();
+  const { toast } = useToast();
   const [notes, setNotes] = useState<LeadNote[]>([]);
-
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (!lead) return;
     supabase.from("lead_notes").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false })
@@ -61,6 +64,40 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
   }, [lead?.id]);
 
   if (!lead) return null;
+
+  // Filter admin-only docs for non-admin users
+  const visibleDocs = hasAdminAccess
+    ? lead.documents
+    : lead.documents.filter((d) => !d.is_admin_only);
+
+  const handleAdminUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !lead || !user) return;
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const filePath = `${lead.id}/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("lead-documents")
+          .upload(filePath, file);
+        if (uploadError) throw uploadError;
+
+        await supabase.from("lead_documents").insert({
+          lead_id: lead.id,
+          name: file.name,
+          url: filePath,
+          uploaded_by: user.id,
+          is_admin_only: true,
+        });
+      }
+      toast({ title: "Uploaded", description: `${files.length} document(s) uploaded.` });
+      // Refresh drawer by triggering a re-render (lead documents will update via realtime)
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const availableStatuses = getAvailableStatuses(lead.status, roles);
 
@@ -194,10 +231,30 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
           )}
 
           {/* Documents */}
-          <Section title={`Documents (${lead.documents.length})`}>
-            {lead.documents.length > 0 ? (
+          <Section title={`Documents (${visibleDocs.length})`}>
+            {hasAdminAccess && (
+              <div className="mb-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleAdminUpload}
+                  className="hidden"
+                  id="admin-doc-upload"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50 w-full justify-center"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  {uploading ? "Uploading..." : "Upload Admin Document"}
+                </button>
+              </div>
+            )}
+            {visibleDocs.length > 0 ? (
               <div className="space-y-2">
-                {lead.documents.map((doc) => (
+                {visibleDocs.map((doc) => (
                   <div
                     key={doc.id}
                     className="flex items-center gap-3 rounded-lg border border-border p-3 transition-all hover:bg-muted/30 hover:border-primary/30 group"
@@ -206,7 +263,12 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
                       <FileText className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {doc.name}
+                        {doc.is_admin_only && (
+                          <span className="ml-1.5 inline-flex rounded-full bg-warning/20 px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground">ADMIN</span>
+                        )}
+                      </p>
                       <p className="text-xs text-muted-foreground">{new Date(doc.created_at).toLocaleDateString()}</p>
                     </div>
                     <button

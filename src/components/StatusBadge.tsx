@@ -2,7 +2,7 @@ import { LeadStatus } from "@/types/lead";
 import { cn } from "@/lib/utils";
 
 const statusConfig: Record<LeadStatus, { bg: string; text: string; label: string }> = {
-  "New Lead": { bg: "bg-primary", text: "text-primary-foreground", label: "NEW LEAD" },
+  "New Lead": { bg: "bg-primary", text: "text-primary-foreground", label: "NEW PATIENT" },
   Pending: { bg: "bg-warning", text: "text-warning-foreground", label: "PENDING" },
   Eligible: { bg: "bg-success", text: "text-success-foreground", label: "ELIGIBLE" },
   "Not Eligible": { bg: "bg-destructive", text: "text-destructive-foreground", label: "NOT ELIGIBLE" },
