@@ -8,6 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 const PAGE_SIZE = 10;
 
+// For doctor view: statuses beyond Shipped show as "Shipped"
+const DOCTOR_HIDDEN_STATUSES = ["Delivered", "Auth Applied", "Auth Approved", "Pre Payment Request", "Post Payment Request", "Billed", "Paid"];
+const getDoctorDisplayStatus = (status: string, isAdmin: boolean): LeadStatus => {
+  if (isAdmin) return status as LeadStatus;
+  if (DOCTOR_HIDDEN_STATUSES.includes(status)) return "Shipped";
+  return status as LeadStatus;
+};
+
 interface PatientTableProps {
   leads: DbLead[];
   onSelectLead: (lead: DbLead) => void;
@@ -196,7 +204,7 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
                     </div>
                   </td>
                   <td className="px-4 py-2.5">
-                    <StatusBadge status={lead.status as LeadStatus} />
+                    <StatusBadge status={getDoctorDisplayStatus(lead.status, hasAdminAccess)} />
                   </td>
                   {hasAdminAccess && (
                     <td className="px-4 py-2.5 text-xs text-foreground whitespace-nowrap">
@@ -288,7 +296,7 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
                   <p className="text-xs text-muted-foreground mt-0.5">DOB: {lead.dob}</p>
                 </div>
               </div>
-              <StatusBadge status={lead.status as LeadStatus} />
+              <StatusBadge status={getDoctorDisplayStatus(lead.status, hasAdminAccess)} />
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 border-t border-border pt-2">
               <span>Order Date: {new Date(lead.created_at).toLocaleDateString()}</span>

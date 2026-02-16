@@ -198,6 +198,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_admin_only: boolean
           lead_id: string
           name: string
           uploaded_by: string | null
@@ -206,6 +207,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_admin_only?: boolean
           lead_id: string
           name: string
           uploaded_by?: string | null
@@ -214,6 +216,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_admin_only?: boolean
           lead_id?: string
           name?: string
           uploaded_by?: string | null

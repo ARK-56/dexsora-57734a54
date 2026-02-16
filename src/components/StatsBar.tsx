@@ -7,10 +7,9 @@ interface StatsBarProps {
 }
 
 const statuses: { status: LeadStatus | "new"; label: string; icon: React.ReactNode }[] = [
-  { status: "new", label: "New/Pending", icon: <Clock className="h-4 w-4" /> },
+  { status: "new", label: "New Patients/Pending", icon: <Clock className="h-4 w-4" /> },
   { status: "Eligible", label: "Eligible", icon: <CheckCircle className="h-4 w-4" /> },
   { status: "Shipped", label: "Shipped", icon: <Package className="h-4 w-4" /> },
-  { status: "Delivered", label: "Delivered", icon: <Package className="h-4 w-4" /> },
 ];
 
 export const StatsBar = ({ leads }: StatsBarProps) => {
@@ -22,7 +21,7 @@ export const StatsBar = ({ leads }: StatsBarProps) => {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       {statuses.map((s) => {
         const count = getCount(s.status);
         return (

@@ -34,6 +34,7 @@ export interface DbLeadDocument {
   url: string;
   uploaded_by: string | null;
   created_at: string;
+  is_admin_only: boolean;
 }
 
 export const useLeads = () => {
