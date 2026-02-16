@@ -15,9 +15,18 @@ const Profile = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (profile && (profile as any).avatar_url) {
-      setAvatarUrl((profile as any).avatar_url);
-    }
+    const loadAvatar = async () => {
+      const url = (profile as any)?.avatar_url;
+      if (!url) return;
+      // If it's a path (not a full URL), get a signed URL
+      if (!url.startsWith("http")) {
+        const { data } = await supabase.storage.from("avatars").createSignedUrl(url, 3600);
+        if (data?.signedUrl) setAvatarUrl(data.signedUrl);
+      } else {
+        setAvatarUrl(url);
+      }
+    };
+    loadAvatar();
   }, [profile]);
 
   if (loading) {
@@ -55,8 +64,8 @@ const Profile = () => {
       return;
     }
 
-    const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
-    const newUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+    // Store just the file path, not a public URL (bucket is private)
+    const newUrl = filePath;
 
     const { error: updateError } = await supabase
       .from("profiles")
@@ -66,7 +75,9 @@ const Profile = () => {
     if (updateError) {
       toast({ title: "Error", description: updateError.message, variant: "destructive" });
     } else {
-      setAvatarUrl(newUrl);
+      // Get signed URL for immediate display
+      const { data: signedData } = await supabase.storage.from("avatars").createSignedUrl(filePath, 3600);
+      setAvatarUrl(signedData?.signedUrl || filePath);
       await refreshProfile();
       toast({ title: "Avatar updated", description: "Your profile picture has been saved." });
     }

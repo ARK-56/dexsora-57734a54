@@ -471,6 +471,7 @@ export type Database = {
     }
     Functions: {
       auto_update_stale_leads: { Args: never; Returns: undefined }
+      cleanup_expired_verifications: { Args: never; Returns: undefined }
       has_admin_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {

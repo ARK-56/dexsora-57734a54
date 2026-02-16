@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,21 @@ interface HeaderProps {
 export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, onNotificationClick }: HeaderProps) => {
   const { user, profile, hasAdminAccess, signOut } = useAuth();
   const [trashCount, setTrashCount] = useState(0);
+  const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const resolveAvatar = async () => {
+      const url = profile?.avatar_url;
+      if (!url) { setResolvedAvatarUrl(null); return; }
+      if (!url.startsWith("http")) {
+        const { data } = await supabase.storage.from("avatars").createSignedUrl(url, 3600);
+        if (data?.signedUrl) setResolvedAvatarUrl(data.signedUrl);
+      } else {
+        setResolvedAvatarUrl(url);
+      }
+    };
+    resolveAvatar();
+  }, [profile?.avatar_url]);
 
   const fetchTrashCount = useCallback(async () => {
     if (!user) return;
@@ -109,8 +124,8 @@ export const Header = ({ searchQuery = "", onSearchChange, onOpenPrescriptions, 
             className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground overflow-hidden"
             title="My Profile"
           >
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+            {resolvedAvatarUrl ? (
+              <img src={resolvedAvatarUrl} alt="Avatar" className="h-full w-full object-cover" />
             ) : (
               initials
             )}
