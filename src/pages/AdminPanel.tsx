@@ -286,7 +286,7 @@ const AdminPanel = () => {
         }}
       />
 
-      <main className="mx-auto max-w-6xl px-4 py-6 lg:px-6 space-y-6">
+      <main className="mx-auto max-w-[1400px] px-4 py-6 lg:px-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
@@ -382,115 +382,125 @@ const AdminPanel = () => {
 
         {/* Leads Tab */}
         {activeTab === "leads" && (
-          <div className="space-y-4">
-            {/* Sub-tabs for lead categories */}
-            <div className="flex gap-1 overflow-x-auto pb-1">
-              {([
-                { key: "all" as const, label: "All Leads", count: leads.length },
-                { key: "completed" as const, label: "Completed Cases", count: leads.filter(l => l.status === "Delivered").length },
-                { key: "denied" as const, label: "Denied Cases", count: leads.filter(l => l.status === "Denied").length },
-                { key: "postpay" as const, label: "Post Pay Requests", count: leads.filter(l => l.status === "Auth Applied").length },
-                { key: "billed" as const, label: "Billed Cases", count: leads.filter(l => l.status === "Billed").length },
-              ]).map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setLeadsSubTab(tab.key)}
-                  className={`shrink-0 rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
-                    leadsSubTab === tab.key
-                      ? "swoosh-gradient text-white shadow-sm"
-                      : "border border-border bg-card text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  {tab.label} ({tab.count})
-                </button>
-              ))}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+            {/* Left: All Leads table */}
+            <div className="space-y-4 min-w-0">
+              <div className="overflow-hidden rounded-xl border border-border bg-card">
+                {leadsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+                  </div>
+                ) : (() => {
+                  const filteredLeads = leadsSubTab === "all" ? leads
+                    : leadsSubTab === "completed" ? leads.filter(l => l.status === "Delivered")
+                    : leadsSubTab === "denied" ? leads.filter(l => l.status === "Denied")
+                    : leadsSubTab === "postpay" ? leads.filter(l => l.status === "Auth Applied")
+                    : leads.filter(l => l.status === "Billed");
+
+                  return filteredLeads.length === 0 ? (
+                    <div className="py-12 text-center text-muted-foreground">No leads in this category.</div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-border bg-muted/50">
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Patient</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Doctor</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Item</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Docs</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order Date</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredLeads.map((lead, idx) => {
+                            const availStatuses = availableStatusesForRole(lead.status);
+                            return (
+                              <tr key={lead.id} className={`border-b border-border transition-colors hover:bg-muted/30 ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
+                                <td className="px-4 py-3 cursor-pointer" onClick={() => setSelectedLead(lead)}>
+                                  <p className="text-sm font-semibold text-primary hover:underline">{lead.patient_name}</p>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <p className="text-sm font-medium text-foreground">{lead.doctor_name || "—"}</p>
+                                  {lead.doctor_npi && <p className="text-xs text-muted-foreground">NPI: {lead.doctor_npi}</p>}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <StatusBadge status={lead.status as LeadStatus} />
+                                </td>
+                                <td className="px-4 py-3 text-sm text-foreground">{lead.item || lead.dme_items || "—"}</td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">
+                                  {lead.documents.length > 0 ? `${lead.documents.length} file(s)` : "—"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">
+                                  {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2">
+                                    {availStatuses.length > 0 ? (
+                                      <select
+                                        value={lead.status}
+                                        onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value)}
+                                        className="h-8 rounded-lg border border-input bg-background px-2 text-xs text-foreground outline-none focus:border-primary"
+                                      >
+                                        <option value={lead.status}>{lead.status}</option>
+                                        {availStatuses.filter(s => s !== lead.status).map((s) => (
+                                          <option key={s} value={s}>{s}</option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground italic">No actions</span>
+                                    )}
+                                    {lead.status === "Need Additional Documents" && (
+                                      <button
+                                        onClick={() => setNoteModal({ leadId: lead.id, patientName: lead.patient_name })}
+                                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
+                                        title="Add note"
+                                      >
+                                        <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-border bg-card">
-              {leadsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
-                </div>
-              ) : (() => {
-                const filteredLeads = leadsSubTab === "all" ? leads
-                  : leadsSubTab === "completed" ? leads.filter(l => l.status === "Delivered")
-                  : leadsSubTab === "denied" ? leads.filter(l => l.status === "Denied")
-                  : leadsSubTab === "postpay" ? leads.filter(l => l.status === "Auth Applied")
-                  : leads.filter(l => l.status === "Billed");
-
-                return filteredLeads.length === 0 ? (
-                  <div className="py-12 text-center text-muted-foreground">No leads in this category.</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="border-b border-border bg-muted/50">
-                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Patient</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Doctor</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Item</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Docs</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order Date</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredLeads.map((lead, idx) => {
-                          const availStatuses = availableStatusesForRole(lead.status);
-                          return (
-                            <tr key={lead.id} className={`border-b border-border transition-colors hover:bg-muted/30 ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
-                              <td className="px-4 py-3 cursor-pointer" onClick={() => setSelectedLead(lead)}>
-                                <p className="text-sm font-semibold text-primary hover:underline">{lead.patient_name}</p>
-                              </td>
-                              <td className="px-4 py-3">
-                                <p className="text-sm font-medium text-foreground">{lead.doctor_name || "—"}</p>
-                                {lead.doctor_npi && <p className="text-xs text-muted-foreground">NPI: {lead.doctor_npi}</p>}
-                              </td>
-                              <td className="px-4 py-3">
-                                <StatusBadge status={lead.status as LeadStatus} />
-                              </td>
-                              <td className="px-4 py-3 text-sm text-foreground">{lead.item || lead.dme_items || "—"}</td>
-                              <td className="px-4 py-3 text-sm text-muted-foreground">
-                                {lead.documents.length > 0 ? `${lead.documents.length} file(s)` : "—"}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-muted-foreground">
-                                {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  {availStatuses.length > 0 ? (
-                                    <select
-                                      value={lead.status}
-                                      onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value)}
-                                      className="h-8 rounded-lg border border-input bg-background px-2 text-xs text-foreground outline-none focus:border-primary"
-                                    >
-                                      <option value={lead.status}>{lead.status}</option>
-                                      {availStatuses.filter(s => s !== lead.status).map((s) => (
-                                        <option key={s} value={s}>{s}</option>
-                                      ))}
-                                    </select>
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground italic">No actions</span>
-                                  )}
-                                  {lead.status === "Need Additional Documents" && (
-                                    <button
-                                      onClick={() => setNoteModal({ leadId: lead.id, patientName: lead.patient_name })}
-                                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
-                                      title="Add note"
-                                    >
-                                      <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })()}
+            {/* Right: Case category tabs */}
+            <div className="hidden lg:block">
+              <div className="sticky top-6 space-y-2">
+                {([
+                  { key: "all" as const, label: "All Leads", count: leads.length },
+                  { key: "completed" as const, label: "Completed Cases", count: leads.filter(l => l.status === "Delivered").length },
+                  { key: "denied" as const, label: "Denied Cases", count: leads.filter(l => l.status === "Denied").length },
+                  { key: "postpay" as const, label: "Post Pay Requests", count: leads.filter(l => l.status === "Auth Applied").length },
+                  { key: "billed" as const, label: "Billed Cases", count: leads.filter(l => l.status === "Billed").length },
+                ]).map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setLeadsSubTab(tab.key)}
+                    className={`w-full flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
+                      leadsSubTab === tab.key
+                        ? "swoosh-gradient text-white shadow-md"
+                        : "border border-border bg-card text-muted-foreground hover:bg-muted hover:border-primary/30"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                      leadsSubTab === tab.key ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
