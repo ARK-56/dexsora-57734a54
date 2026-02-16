@@ -1,5 +1,5 @@
 import { LeadStatus } from "@/types/lead";
-import { ArrowRight, Hexagon, Sparkles, Clock, CheckCircle2, Package, Home, FileCheck, Receipt, DollarSign } from "lucide-react";
+import { ArrowRight, Sparkles, Clock, CheckCircle2, Package, Home, FileCheck, Receipt, DollarSign } from "lucide-react";
 
 const steps: { status: LeadStatus; label: string; icon: React.ReactNode }[] = [
   { status: "New Lead", label: "New Lead", icon: <Sparkles className="h-3.5 w-3.5" /> },
@@ -16,7 +16,6 @@ export const LifecycleBar = () => {
   return (
     <div className="hidden lg:flex items-center gap-0.5 rounded-xl swoosh-gradient px-4 py-3 shadow-lg">
       <div className="flex items-center gap-1.5 mr-3">
-        <Hexagon className="h-5 w-5 text-white/90" />
         <span className="text-xs font-bold text-white uppercase tracking-widest">Lifecycle</span>
       </div>
       {steps.map((step, i) => (
