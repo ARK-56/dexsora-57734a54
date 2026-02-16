@@ -319,14 +319,16 @@ const AdminPanel = () => {
 
         {/* Stats - only for admin */}
         {isAdmin && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="flex items-center gap-3 rounded-xl swoosh-gradient p-5">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
-                <Users className="h-5 w-5" />
+                <Stethoscope className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-2xl font-bold font-display text-white">{profiles.length}</p>
-                <p className="text-xs text-white/80">Total Users</p>
+                <p className="text-2xl font-bold font-display text-white">
+                  {userRoles.filter((r) => r.role === "doctor").length}
+                </p>
+                <p className="text-xs text-white/80">Total Doctors</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-xl swoosh-gradient p-5">
@@ -347,6 +349,17 @@ const AdminPanel = () => {
                   {userRoles.filter((r) => r.role === "admin").length}
                 </p>
                 <p className="text-xs text-white/80">Admins</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl swoosh-gradient p-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold font-display text-white">
+                  {userRoles.filter((r) => ["eligibility", "auth_team", "shipment", "billing"].includes(r.role)).map(r => r.user_id).filter((v, i, a) => a.indexOf(v) === i).length}
+                </p>
+                <p className="text-xs text-white/80">Users with Admin Access</p>
               </div>
             </div>
           </div>
