@@ -113,6 +113,14 @@ const Index = () => {
         <LifecycleBar />
         <StatsBar leads={leads} />
 
+        <button
+          onClick={() => setPrescriptionOpen(true)}
+          className="flex items-center gap-1.5 w-fit rounded-lg swoosh-gradient px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+        >
+          <FileText className="h-4 w-4" />
+          Prescriptions
+        </button>
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             <Filter className="h-4 w-4 text-muted-foreground shrink-0 mr-1" />
@@ -132,13 +140,6 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPrescriptionOpen(true)}
-              className="flex items-center gap-1.5 shrink-0 rounded-lg swoosh-gradient px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-            >
-              <FileText className="h-4 w-4" />
-              Prescriptions
-            </button>
             {selectedIds.length > 0 && (() => {
               const allNewLead = selectedIds.every((id) => {
                 const lead = leads.find((l) => l.id === id);
