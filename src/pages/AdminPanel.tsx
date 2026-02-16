@@ -391,7 +391,8 @@ const AdminPanel = () => {
                     <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
                   </div>
                 ) : (() => {
-                  const filteredLeads = leadsSubTab === "all" ? leads
+                  const categorizedStatuses = ["Delivered", "Denied", "Auth Applied", "Billed"];
+                  const filteredLeads = leadsSubTab === "all" ? leads.filter(l => !categorizedStatuses.includes(l.status))
                     : leadsSubTab === "completed" ? leads.filter(l => l.status === "Delivered")
                     : leadsSubTab === "denied" ? leads.filter(l => l.status === "Denied")
                     : leadsSubTab === "postpay" ? leads.filter(l => l.status === "Auth Applied")
@@ -477,7 +478,7 @@ const AdminPanel = () => {
             <div className="hidden lg:block">
               <div className="sticky top-6 space-y-2">
                 {([
-                  { key: "all" as const, label: "All Leads", count: leads.length },
+                  { key: "all" as const, label: "All Leads", count: leads.filter(l => !["Delivered", "Denied", "Auth Applied", "Billed"].includes(l.status)).length },
                   { key: "completed" as const, label: "Completed Cases", count: leads.filter(l => l.status === "Delivered").length },
                   { key: "denied" as const, label: "Denied Cases", count: leads.filter(l => l.status === "Denied").length },
                   { key: "postpay" as const, label: "Post Pay Requests", count: leads.filter(l => l.status === "Auth Applied").length },
