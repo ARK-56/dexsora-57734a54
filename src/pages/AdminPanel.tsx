@@ -12,6 +12,7 @@ import { LeadStatus } from "@/types/lead";
 import { Textarea } from "@/components/ui/textarea";
 import { PatientDrawer } from "@/components/PatientDrawer";
 import { AdminChat } from "@/components/AdminChat";
+import { PrescriptionPanel } from "@/components/PrescriptionPanel";
 
 interface ProfileRow {
   user_id: string;
@@ -80,6 +81,7 @@ const AdminPanel = () => {
   const [selectedLead, setSelectedLead] = useState<DbLead | null>(null);
   const [unreadNotesCount, setUnreadNotesCount] = useState(0);
   const [newLeadsCount, setNewLeadsCount] = useState(0);
+  const [prescriptionOpen, setPrescriptionOpen] = useState(false);
 
   const fetchUnreadNotes = async () => {
     const { count } = await supabase
@@ -297,24 +299,33 @@ const AdminPanel = () => {
               <p className="text-sm text-muted-foreground">Manage users, roles, and leads</p>
             </div>
           </div>
-          {isAdmin && activeTab === "users" && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowAddDoctor(true)}
-                className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-              >
-                <Stethoscope className="h-4 w-4" />
-                Add Doctor
-              </button>
-              <button
-                onClick={() => setShowAddUser(true)}
-                className="flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                <UserPlus className="h-4 w-4" />
-                Add User
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPrescriptionOpen(true)}
+              className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              <FileText className="h-4 w-4" />
+              Prescriptions
+            </button>
+            {isAdmin && activeTab === "users" && (
+              <>
+                <button
+                  onClick={() => setShowAddDoctor(true)}
+                  className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+                >
+                  <Stethoscope className="h-4 w-4" />
+                  Add Doctor
+                </button>
+                <button
+                  onClick={() => setShowAddUser(true)}
+                  className="flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add User
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Stats - only for admin */}
@@ -761,6 +772,7 @@ const AdminPanel = () => {
           setSelectedLead(null);
         }}
       />
+      <PrescriptionPanel open={prescriptionOpen} onClose={() => setPrescriptionOpen(false)} />
     </div>
   );
 };
