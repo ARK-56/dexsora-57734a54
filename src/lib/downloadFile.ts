@@ -1,5 +1,9 @@
-export const downloadFile = async (url: string, fileName: string) => {
+import { getSignedUrl } from "./getSignedUrl";
+
+export const downloadFile = async (urlOrPath: string, fileName: string) => {
   try {
+    // Resolve signed URL for private bucket files
+    const url = await getSignedUrl("lead-documents", urlOrPath);
     const response = await fetch(url);
     const blob = await response.blob();
     const blobUrl = window.URL.createObjectURL(blob);
@@ -12,6 +16,7 @@ export const downloadFile = async (url: string, fileName: string) => {
     window.URL.revokeObjectURL(blobUrl);
   } catch {
     // Fallback: open in new tab
+    const url = await getSignedUrl("lead-documents", urlOrPath);
     window.open(url, "_blank");
   }
 };

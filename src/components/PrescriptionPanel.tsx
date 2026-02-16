@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { downloadFile } from "@/lib/downloadFile";
+import { getSignedUrl } from "@/lib/getSignedUrl";
 
 interface Prescription {
   id: string;
@@ -55,11 +56,10 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
         continue;
       }
 
-      const { data: urlData } = supabase.storage.from("lead-documents").getPublicUrl(filePath);
-
+      // Store the file path (not public URL) since bucket is private
       await supabase.from("prescriptions").insert({
         name: fileName || file.name,
-        url: urlData.publicUrl,
+        url: filePath,
         uploaded_by: user.id,
       });
     }
@@ -141,9 +141,9 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
                       <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
                       <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
                     </div>
-                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0" title="View">
+                    <button onClick={async () => { const url = await getSignedUrl("lead-documents", p.url); window.open(url, "_blank"); }} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0" title="View">
                       <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
+                    </button>
                     <button onClick={() => downloadFile(p.url, p.name)} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0" title="Download">
                       <Download className="h-3.5 w-3.5" />
                     </button>

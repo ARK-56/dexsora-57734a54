@@ -2,9 +2,10 @@ import { DbLead } from "@/hooks/useLeads";
 import { LeadStatus, UserRole } from "@/types/lead";
 import { StatusBadge } from "./StatusBadge";
 import { X, User, MapPin, Phone, Mail, FileText, Calendar, ExternalLink, Shield, Package, Download, ClipboardList, MessageSquare } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadFile } from "@/lib/downloadFile";
+import { getSignedUrl } from "@/lib/getSignedUrl";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface PatientDrawerProps {
@@ -208,15 +209,16 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
                       <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
                       <p className="text-xs text-muted-foreground">{new Date(doc.created_at).toLocaleDateString()}</p>
                     </div>
-                    <a
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={async () => {
+                        const url = await getSignedUrl("lead-documents", doc.url);
+                        window.open(url, "_blank");
+                      }}
                       className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                       title="View"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
+                    </button>
                     <button
                       onClick={() => downloadFile(doc.url, doc.name)}
                       className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"

@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-bootstrap-token",
 };
 
 Deno.serve(async (req) => {
@@ -11,14 +11,31 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Require bootstrap token for security
+    const bootstrapToken = Deno.env.get("BOOTSTRAP_TOKEN");
+    if (bootstrapToken) {
+      const providedToken = req.headers.get("X-Bootstrap-Token");
+      if (providedToken !== bootstrapToken) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized: invalid bootstrap token" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     const { email, password } = await req.json();
     if (!email || !password) {
       throw new Error("Email and password are required");
     }
 
+    // Validate email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255) {
+      throw new Error("Invalid email format");
+    }
+
     // Validate password strength
-    if (password.length < 8) {
-      throw new Error("Password must be at least 8 characters");
+    if (password.length < 8 || password.length > 128) {
+      throw new Error("Password must be 8-128 characters");
     }
 
     const supabaseAdmin = createClient(
@@ -58,12 +75,12 @@ Deno.serve(async (req) => {
     if (roleError) throw roleError;
 
     return new Response(
-      JSON.stringify({ message: "Admin user created successfully", userId: newUser.user.id }),
+      JSON.stringify({ message: "Admin user created successfully" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "An error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
