@@ -20,8 +20,8 @@ const Login = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(135deg,hsl(183,60%,20%)_0%,hsl(183,100%,25%)_40%,hsl(175,50%,30%)_100%)]">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-white border-t-transparent" />
-      </div>
-    );
+      </div>);
+
   }
 
   if (user) return <Navigate to="/" replace />;
@@ -61,15 +61,15 @@ const Login = () => {
     <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(135deg,hsl(183,60%,20%)_0%,hsl(183,100%,25%)_40%,hsl(175,50%,30%)_100%)] p-4">
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center flex flex-col items-center">
-          <img src={dexsoraLogo} alt="Dexsora" className="h-16 mb-2" />
+          <img alt="Dexsora" className="h-16 mb-2" src="/lovable-uploads/9a9a6f34-256f-4cf9-a1a2-5b4b3ca9467f.png" />
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-6 shadow-xl space-y-4">
-          {error && (
-            <div className="rounded-lg border border-red-400/30 bg-red-500/15 p-3 text-sm text-red-200">
+          {error &&
+          <div className="rounded-lg border border-red-400/30 bg-red-500/15 p-3 text-sm text-red-200">
               {error}
             </div>
-          )}
+          }
 
           <div>
             <label className="mb-1.5 block text-xs font-medium text-white/70">Email</label>
@@ -79,8 +79,8 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="h-10 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-sm text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
-              placeholder="you@company.com"
-            />
+              placeholder="you@company.com" />
+
           </div>
 
           <div>
@@ -91,23 +91,23 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="h-10 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-sm text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
-              placeholder="••••••••"
-            />
+              placeholder="••••••••" />
+
           </div>
 
           <button
             type="submit"
             disabled={submitting || locked}
-            className="h-10 w-full rounded-lg bg-white text-sm font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
+            className="h-10 w-full rounded-lg bg-white text-sm font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50">
+
             {locked ? "Locked — Wait 1 min" : submitting ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-xs text-white/40">Sign in to your account</p>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Login;
