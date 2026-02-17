@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OrgProvider } from "@/contexts/OrgContext";
 import PendingSetupGuard from "@/components/PendingSetupGuard";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -26,21 +27,23 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <PendingSetupGuard>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/checkout-success" element={<CheckoutSuccess />} />
-              <Route path="/admin" element={<AdminPanel />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/trash" element={<Trash />} />
-              <Route path="/setup-account" element={<SetupAccount />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </PendingSetupGuard>
+          <OrgProvider>
+            <PendingSetupGuard>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/checkout-success" element={<CheckoutSuccess />} />
+                <Route path="/admin" element={<AdminPanel />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/trash" element={<Trash />} />
+                <Route path="/setup-account" element={<SetupAccount />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </PendingSetupGuard>
+          </OrgProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrg } from "@/contexts/OrgContext";
 import { useToast } from "@/hooks/use-toast";
 
 export interface DbLead {
@@ -39,6 +40,7 @@ export interface DbLeadDocument {
 
 export const useLeads = () => {
   const { user, hasAdminAccess, profile } = useAuth();
+  const { currentOrg } = useOrg();
   const { toast } = useToast();
   const [leads, setLeads] = useState<DbLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,10 @@ export const useLeads = () => {
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
-    if (!hasAdminAccess) {
+    // Scope by organization if user has one
+    if (currentOrg) {
+      query = query.eq("organization_id", currentOrg.id);
+    } else if (!hasAdminAccess) {
       query = query.eq("submitted_by", user.id);
     }
 
@@ -92,7 +97,7 @@ export const useLeads = () => {
 
     setLeads(enrichedLeads);
     setLoading(false);
-  }, [user, hasAdminAccess]);
+  }, [user, hasAdminAccess, currentOrg]);
 
   useEffect(() => {
     if (!user) return;
@@ -137,6 +142,7 @@ export const useLeads = () => {
         doctor_name: profile?.full_name || "Unknown",
         doctor_npi: profile?.npi || "",
         submitted_by: user.id,
+        organization_id: currentOrg?.id || null,
       } as any)
       .select()
       .single();
@@ -224,7 +230,10 @@ export const useLeads = () => {
       .not("deleted_at", "is", null)
       .order("deleted_at", { ascending: false });
 
-    if (!hasAdminAccess) {
+    // Scope by organization if user has one
+    if (currentOrg) {
+      query = query.eq("organization_id", currentOrg.id);
+    } else if (!hasAdminAccess) {
       query = query.eq("submitted_by", user.id);
     }
 
@@ -247,7 +256,7 @@ export const useLeads = () => {
       doctor_npi: (lead as any).doctor_npi || null,
       documents: docsMap.get(lead.id) || [],
     })) as DbLead[];
-  }, [user, hasAdminAccess]);
+  }, [user, hasAdminAccess, currentOrg]);
 
   return { leads, loading, createLead, updateLeadStatus, softDeleteLeads, permanentDeleteLeads, restoreLeads, fetchTrashedLeads, refreshLeads: fetchLeads };
 };
