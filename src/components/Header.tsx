@@ -127,9 +127,10 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
             </Link>
           }
 
-          <ThemeToggle />
-          <NotificationPopup onNotificationClick={onNotificationClick} />
+          {!isSuperAdminOnly && <ThemeToggle />}
+          {!isSuperAdminOnly && <NotificationPopup onNotificationClick={onNotificationClick} />}
 
+          {!isSuperAdminOnly &&
           <Link
             to="/profile"
             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white overflow-hidden border border-white/30"
@@ -140,7 +141,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
 
             initials
             }
-          </Link>
+          </Link>}
 
           <button
             onClick={signOut}
