@@ -17,7 +17,8 @@ interface HeaderProps {
 }
 
 export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }: HeaderProps) => {
-  const { user, profile, hasAdminAccess, isSuperAdmin, signOut } = useAuth();
+  const { user, profile, hasAdminAccess, isDoctor, isSuperAdmin, signOut } = useAuth();
+  const isSuperAdminOnly = isSuperAdmin && !hasAdminAccess && !isDoctor;
   const { isOrgOwner, isOrgAdmin } = useOrg();
   const [trashCount, setTrashCount] = useState(0);
   const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState<string | null>(null);
@@ -72,8 +73,8 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
         </Link>
 
         <div className="flex items-center gap-3">
-          <OrgSwitcher />
-          <div className="relative hidden md:block">
+          {!isSuperAdminOnly && <OrgSwitcher />}
+          {!isSuperAdminOnly && <div className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
             <input
               type="text"
@@ -82,9 +83,9 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
               onChange={(e) => onSearchChange?.(e.target.value)}
               className="h-9 w-64 rounded-lg border border-white/20 bg-white/10 pl-9 pr-4 text-sm text-white placeholder:text-white/50 outline-none transition-colors focus:border-white/40 focus:ring-1 focus:ring-white/30" />
 
-          </div>
+          </div>}
 
-
+          {!isSuperAdminOnly &&
           <Link
             to="/trash"
             className="relative flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20"
@@ -97,9 +98,9 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
                 {trashCount}
               </span>
             }
-          </Link>
+          </Link>}
 
-          {(isOrgOwner || isOrgAdmin) &&
+          {!isSuperAdminOnly && (isOrgOwner || isOrgAdmin) &&
           <Link
             to="/org-settings"
             className="flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20">
@@ -108,7 +109,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
             </Link>
           }
 
-          {hasAdminAccess &&
+          {!isSuperAdminOnly && hasAdminAccess &&
           <Link
             to="/admin"
             className="flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20">
