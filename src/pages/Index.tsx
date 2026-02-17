@@ -97,6 +97,7 @@ const Index = () => {
     { value: "Not Eligible", label: "Not Eligible" },
     { value: "Need Additional Documents", label: "Need Additional Documents" },
     { value: "Shipped", label: "Shipped" },
+    { value: "Delivered", label: "Delivered" },
   ];
 
   return (
@@ -136,7 +137,7 @@ const Index = () => {
                 ))}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ml-auto">
                 {selectedIds.length > 0 && (() => {
                   const allNewLead = selectedIds.every((id) => {
                     const lead = leads.find((l) => l.id === id);

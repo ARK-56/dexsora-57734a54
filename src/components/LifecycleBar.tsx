@@ -6,6 +6,7 @@ const steps: { status: LeadStatus; label: string; icon: React.ReactNode }[] = [
   { status: "Pending", label: "Pending", icon: <Clock className="h-3.5 w-3.5" /> },
   { status: "Eligible", label: "Eligible", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
   { status: "Shipped", label: "Shipped", icon: <Package className="h-3.5 w-3.5" /> },
+  { status: "Delivered", label: "Delivered", icon: <Home className="h-3.5 w-3.5" /> },
 ];
 
 export const LifecycleBar = () => {
