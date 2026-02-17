@@ -141,7 +141,7 @@ const AdminPanel = () => {
   }
 
   if (user?.user_metadata?.pending_setup) return <Navigate to="/setup-account" replace />;
-  if (isSuperAdmin && !hasAdminAccess && !isDoctor) return <Navigate to="/super-admin" replace />;
+  if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
   if (!hasAdminAccess) return <Navigate to="/" replace />;
 
   const getUserRoles = (userId: string) =>

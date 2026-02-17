@@ -10,7 +10,7 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 const Trash = () => {
   const { user, loading, hasAdminAccess, isSuperAdmin, isDoctor } = useAuth();
-  const isSuperAdminOnly = isSuperAdmin && !hasAdminAccess && !isDoctor;
+  const isSuperAdminOnly = isSuperAdmin;
   const { fetchTrashedLeads, restoreLeads, permanentDeleteLeads } = useLeads();
   const [trashedLeads, setTrashedLeads] = useState<DbLead[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);

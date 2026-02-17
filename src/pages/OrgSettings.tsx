@@ -86,7 +86,7 @@ const OrgSettings = () => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (isSuperAdmin && !hasAdminAccess && !isDoctor) return <Navigate to="/super-admin" replace />;
+  if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
   if (!currentOrg) return <Navigate to="/" replace />;
   if (!isOrgOwner && !isOrgAdmin) return <Navigate to="/" replace />;
 
