@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useOrg } from "@/contexts/OrgContext";
 import { LeadStatus } from "@/types/lead";
 import { Header } from "@/components/Header";
 import { StatsBar } from "@/components/StatsBar";
@@ -15,6 +16,7 @@ import { useLeads, DbLead } from "@/hooks/useLeads";
 
 const Index = () => {
   const { user, loading, hasAdminAccess, isDoctor, isSuperAdmin, roles } = useAuth();
+  const { isOrgOwner, isOrgAdmin } = useOrg();
   const { leads, loading: leadsLoading, createLead, updateLeadStatus, softDeleteLeads, permanentDeleteLeads } = useLeads();
   const [selectedLead, setSelectedLead] = useState<DbLead | null>(null);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
@@ -157,12 +159,14 @@ const Index = () => {
                     <span className="text-xs text-muted-foreground italic">Cannot delete leads that have been processed</span>
                   );
                 })()}
-                <button
-                  onClick={() => setIsSubmitOpen(true)}
-                  className="shrink-0 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90"
-                >
-                  + New Patient
-                </button>
+                {!isOrgOwner && !isOrgAdmin && (
+                  <button
+                    onClick={() => setIsSubmitOpen(true)}
+                    className="shrink-0 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90"
+                  >
+                    + New Patient
+                  </button>
+                )}
               </div>
             </div>
 
