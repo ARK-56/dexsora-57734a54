@@ -35,6 +35,77 @@ async function logAudit(
   }
 }
 
+// Send branded invite email via Resend
+async function sendInviteEmail(email: string, role: string, setupUrl: string) {
+  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+  if (!RESEND_API_KEY) {
+    console.error("RESEND_API_KEY not configured, skipping invite email");
+    return;
+  }
+
+  const roleDisplay = role.charAt(0).toUpperCase() + role.slice(1);
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+        <tr><td style="background:linear-gradient(135deg,#0ea5e9,#6366f1);padding:32px 40px;text-align:center;">
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Dexsora</h1>
+        </td></tr>
+        <tr><td style="padding:40px;">
+          <h2 style="margin:0 0 8px;color:#18181b;font-size:20px;font-weight:600;">You're Invited!</h2>
+          <p style="margin:0 0 24px;color:#71717a;font-size:15px;line-height:1.6;">
+            You've been invited to join <strong style="color:#18181b;">Dexsora</strong> as a <strong style="color:#18181b;">${roleDisplay}</strong>. Click the button below to set up your account.
+          </p>
+          <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+            <a href="${setupUrl}" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:12px 32px;border-radius:8px;">Set Up Your Account</a>
+          </td></tr></table>
+          <p style="margin:24px 0 0;color:#a1a1aa;font-size:13px;line-height:1.5;">
+            If the button doesn't work, copy and paste this link:<br>
+            <a href="${setupUrl}" style="color:#0ea5e9;word-break:break-all;">${setupUrl}</a>
+          </p>
+        </td></tr>
+        <tr><td style="padding:24px 40px;background-color:#fafafa;border-top:1px solid #f0f0f0;text-align:center;">
+          <p style="margin:0;color:#a1a1aa;font-size:12px;">© ${new Date().getFullYear()} Dexsora. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Dexsora <onboarding@resend.dev>",
+        to: [email],
+        subject: `You're invited to join Dexsora as ${roleDisplay}`,
+        html: htmlContent,
+      }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      console.error("Resend error:", result);
+    } else {
+      console.log("Invite email sent:", result.id);
+    }
+  } catch (e) {
+    console.error("Failed to send invite email:", e);
+  }
+}
+
+function getSetupBaseUrl() {
+  return Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || '';
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -63,64 +134,34 @@ Deno.serve(async (req) => {
 
     const { action, ...payload } = await req.json();
 
-    // Invite-based user creation (email only) — uses Resend for branded email
     if (action === "invite_user") {
       const { email, role } = payload;
       if (!email) throw new Error("Missing email");
       if (!isValidEmail(email)) throw new Error("Invalid email format");
       if (!VALID_STAFF_ROLES.includes(role)) throw new Error("Invalid role. Must be one of: " + VALID_STAFF_ROLES.join(", "));
 
-      // Check if user already exists
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
       const existingUser = existingUsers?.users?.find((u: any) => u.email === email);
       if (existingUser) throw new Error("A user with this email already exists. Use the edit function to update their role.");
 
-      // Create user without sending default email — use a temp password
       const tempPassword = crypto.randomUUID() + "Aa1!";
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: tempPassword,
-        email_confirm: true,
+        email, password: tempPassword, email_confirm: true,
         user_metadata: { pending_setup: true, assigned_role: role },
       });
-
       if (createError) throw createError;
 
-      // Assign role
       const { error: roleError } = await supabaseAdmin
-        .from("user_roles")
-        .insert({ user_id: newUser.user.id, role });
+        .from("user_roles").insert({ user_id: newUser.user.id, role });
       if (roleError) throw roleError;
 
-      // Generate a magic link for setup
-      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-        type: "magiclink",
-        email,
-        options: { redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account` },
+      const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink", email,
+        options: { redirectTo: `${getSetupBaseUrl()}/setup-account` },
       });
-      if (linkError) throw linkError;
+      const setupUrl = linkData?.properties?.action_link || `${getSetupBaseUrl()}/setup-account`;
 
-      // Extract the token from the generated link
-      const actionLink = linkData?.properties?.action_link || "";
-      const setupUrl = actionLink || `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account`;
-
-      // Send branded email via Resend
-      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-      if (RESEND_API_KEY) {
-        const resendRes = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-invite`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          },
-          body: JSON.stringify({ email, role, setupUrl }),
-        });
-        const resendResult = await resendRes.json();
-        if (!resendRes.ok) {
-          console.error("Send invite failed:", resendResult);
-        }
-      }
-
+      await sendInviteEmail(email, role, setupUrl);
       await logAudit(supabaseAdmin, caller.id, "invite_user", "user", newUser.user.id, { email, role });
 
       return new Response(
@@ -135,61 +176,32 @@ Deno.serve(async (req) => {
       if (!isValidEmail(email)) throw new Error("Invalid email format");
       if (npi && !isValidNPI(npi)) throw new Error("NPI must be exactly 10 digits");
 
-      // Check if user already exists
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
       const existingUser = existingUsers?.users?.find((u: any) => u.email === email);
       if (existingUser) throw new Error("A user with this email already exists. Use the edit function to update their role.");
 
-      // Create user without sending default email
       const tempPassword = crypto.randomUUID() + "Aa1!";
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: tempPassword,
-        email_confirm: true,
+        email, password: tempPassword, email_confirm: true,
         user_metadata: { pending_setup: true, assigned_role: "doctor", npi: npi || "" },
       });
-
       if (createError) throw createError;
 
-      // Assign doctor role
       const { error: roleError } = await supabaseAdmin
-        .from("user_roles")
-        .insert({ user_id: newUser.user.id, role: "doctor" });
+        .from("user_roles").insert({ user_id: newUser.user.id, role: "doctor" });
       if (roleError) throw roleError;
 
-      // Update NPI on profile if provided
       if (npi) {
         await supabaseAdmin.from("profiles").update({ npi }).eq("user_id", newUser.user.id);
       }
 
-      // Generate a magic link for setup
-      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-        type: "magiclink",
-        email,
-        options: { redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account` },
+      const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink", email,
+        options: { redirectTo: `${getSetupBaseUrl()}/setup-account` },
       });
-      if (linkError) throw linkError;
+      const setupUrl = linkData?.properties?.action_link || `${getSetupBaseUrl()}/setup-account`;
 
-      const actionLink = linkData?.properties?.action_link || "";
-      const setupUrl = actionLink || `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account`;
-
-      // Send branded email via Resend
-      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-      if (RESEND_API_KEY) {
-        const resendRes = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-invite`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          },
-          body: JSON.stringify({ email, role: "doctor", setupUrl }),
-        });
-        const resendResult = await resendRes.json();
-        if (!resendRes.ok) {
-          console.error("Send invite failed:", resendResult);
-        }
-      }
-
+      await sendInviteEmail(email, "doctor", setupUrl);
       await logAudit(supabaseAdmin, caller.id, "invite_doctor", "user", newUser.user.id, { email, npi });
 
       return new Response(
@@ -201,19 +213,14 @@ Deno.serve(async (req) => {
     if (action === "update") {
       const { userId, fullName, email, role, password } = payload;
       if (!userId) throw new Error("Missing userId");
-
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
         throw new Error("Invalid userId format");
       }
-
       if (fullName !== undefined && !isValidName(fullName)) throw new Error("Invalid name format");
       if (email !== undefined && !isValidEmail(email)) throw new Error("Invalid email format");
       if (role && !VALID_ALL_ROLES.includes(role)) throw new Error("Invalid role");
       if (password !== undefined && !isValidPassword(password)) throw new Error("Password must be 8-128 characters");
-
-      if (userId === caller.id && role && role !== "admin") {
-        throw new Error("Cannot remove your own admin role");
-      }
+      if (userId === caller.id && role && role !== "admin") throw new Error("Cannot remove your own admin role");
 
       const changes: Record<string, any> = {};
 
@@ -227,12 +234,7 @@ Deno.serve(async (req) => {
         const updates: any = {};
         if (fullName !== undefined) { updates.full_name = fullName; changes.full_name = fullName; }
         if (email !== undefined) { updates.email = email; changes.email = email; }
-
-        const { error: profileError } = await supabaseAdmin
-          .from("profiles")
-          .update(updates)
-          .eq("user_id", userId);
-
+        const { error: profileError } = await supabaseAdmin.from("profiles").update(updates).eq("user_id", userId);
         if (profileError) throw profileError;
       }
 
@@ -240,63 +242,35 @@ Deno.serve(async (req) => {
         const { data: oldRoles } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", userId);
         changes.old_role = oldRoles?.[0]?.role;
         changes.new_role = role;
-
         await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
-        const { error: roleError } = await supabaseAdmin
-          .from("user_roles")
-          .insert({ user_id: userId, role });
-
+        const { error: roleError } = await supabaseAdmin.from("user_roles").insert({ user_id: userId, role });
         if (roleError) throw roleError;
       }
 
       await logAudit(supabaseAdmin, caller.id, "update_user", "user", userId, changes);
-
-      return new Response(
-        JSON.stringify({ message: "User updated" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ message: "User updated" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Delete user action
     if (action === "delete_user") {
       const { userId } = payload;
       if (!userId) throw new Error("Missing userId");
-
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
         throw new Error("Invalid userId format");
       }
+      if (userId === caller.id) throw new Error("Cannot delete your own account");
 
-      // Prevent self-deletion
-      if (userId === caller.id) {
-        throw new Error("Cannot delete your own account");
-      }
-
-      // Get user info for audit before deletion
-      const { data: userProfile } = await supabaseAdmin
-        .from("profiles")
-        .select("full_name, email")
-        .eq("user_id", userId)
-        .single();
-
-      // Delete roles first
+      const { data: userProfile } = await supabaseAdmin.from("profiles").select("full_name, email").eq("user_id", userId).single();
       await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
-
-      // Delete profile
       await supabaseAdmin.from("profiles").delete().eq("user_id", userId);
-
-      // Delete auth user
       const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
       if (deleteError) throw deleteError;
 
       await logAudit(supabaseAdmin, caller.id, "delete_user", "user", userId, {
-        email: userProfile?.email,
-        full_name: userProfile?.full_name,
+        email: userProfile?.email, full_name: userProfile?.full_name,
       });
-
-      return new Response(
-        JSON.stringify({ message: "User deleted" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ message: "User deleted" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     throw new Error("Unknown action");
