@@ -58,6 +58,15 @@ const Pricing = () => {
     }
   };
 
+  // Also allow direct access without choosing a plan
+  const handleFreeTrial = () => {
+    if (user) {
+      navigate("/onboarding");
+    } else {
+      navigate("/signup");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,hsl(183,60%,20%)_0%,hsl(183,100%,25%)_40%,hsl(175,50%,30%)_100%)]">
       {/* Header */}
