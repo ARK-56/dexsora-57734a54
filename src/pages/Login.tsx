@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import dexsoraLogo from "@/assets/dexsora-logo.png";
 
 const MAX_ATTEMPTS = 5;
@@ -105,7 +105,12 @@ const Login = () => {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-white/40">Sign in to your account</p>
+        <p className="mt-6 text-center text-xs text-white/40">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-white/80 underline hover:text-white transition-colors">
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>);
 
