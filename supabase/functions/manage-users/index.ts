@@ -85,7 +85,7 @@ async function sendInviteEmail(email: string, role: string, setupUrl: string) {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Dexsora <onboarding@resend.dev>",
+        from: "Dexsora <noreply@dexsora.com>",
         to: [email],
         subject: `You're invited to join Dexsora as ${roleDisplay}`,
         html: htmlContent,
@@ -270,6 +270,42 @@ Deno.serve(async (req) => {
         email: userProfile?.email, full_name: userProfile?.full_name,
       });
       return new Response(JSON.stringify({ message: "User deleted" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (action === "resend_invite") {
+      const { userId } = payload;
+      if (!userId) throw new Error("Missing userId");
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+        throw new Error("Invalid userId format");
+      }
+
+      // Get user info
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+      if (userError || !userData?.user) throw new Error("User not found");
+
+      const email = userData.user.email;
+      if (!email) throw new Error("User has no email");
+
+      // Check if user still has pending_setup
+      const isPending = userData.user.user_metadata?.pending_setup === true;
+      if (!isPending) throw new Error("This user has already completed their account setup");
+
+      // Get their role
+      const { data: roleData } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", userId);
+      const role = roleData?.[0]?.role || "user";
+
+      // Generate a fresh magic link
+      const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink", email,
+        options: { redirectTo: `${getSetupBaseUrl()}/setup-account` },
+      });
+      const setupUrl = linkData?.properties?.action_link || `${getSetupBaseUrl()}/setup-account`;
+
+      await sendInviteEmail(email, role, setupUrl);
+      await logAudit(supabaseAdmin, caller.id, "resend_invite", "user", userId, { email, role });
+
+      return new Response(JSON.stringify({ message: "Invitation resent" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
