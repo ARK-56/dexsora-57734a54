@@ -12,7 +12,8 @@ export type LeadStatus =
   | "Post Payment Request"
   | "Billed"
   | "Paid"
-  | "Denied";
+  | "Denied"
+  | "Completed";
 
 export type UserRole = "doctor" | "admin" | "eligibility" | "shipment" | "billing";
 

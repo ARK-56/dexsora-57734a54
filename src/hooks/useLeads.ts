@@ -103,6 +103,9 @@ export const useLeads = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => {
         fetchLeads();
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "lead_documents" }, () => {
+        fetchLeads();
+      })
       .subscribe();
 
     return () => {

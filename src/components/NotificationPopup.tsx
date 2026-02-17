@@ -71,8 +71,10 @@ export const NotificationPopup = ({ onNotificationClick }: NotificationPopupProp
       setNotifications((prev) => prev.map((notif) => notif.id === n.id ? { ...notif, is_read: true } : notif));
     }
 
-    // Extract patient name from message like "Lead for John Doe changed from..."
-    const match = n.message.match(/Lead for (.+?) changed from/);
+    // Extract patient name from messages like:
+    // "Lead for John Doe changed from..."
+    // "A new lead for John Doe has been submitted."
+    const match = n.message.match(/(?:Lead for|lead for) (.+?) (?:changed from|has been)/);
     if (match && onNotificationClick) {
       onNotificationClick(match[1]);
       setIsOpen(false);

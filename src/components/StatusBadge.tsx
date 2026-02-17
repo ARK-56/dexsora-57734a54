@@ -16,6 +16,7 @@ const statusConfig: Record<LeadStatus, { bg: string; text: string; label: string
   Billed: { bg: "bg-primary", text: "text-primary-foreground", label: "BILLED" },
   Paid: { bg: "bg-success", text: "text-success-foreground", label: "PAID" },
   Denied: { bg: "bg-destructive", text: "text-destructive-foreground", label: "DENIED" },
+  Completed: { bg: "bg-success", text: "text-success-foreground", label: "COMPLETED" },
 };
 
 export const StatusBadge = ({ status }: { status: LeadStatus }) => {
