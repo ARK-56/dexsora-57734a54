@@ -310,8 +310,20 @@ Deno.serve(async (req) => {
 
     throw new Error("Unknown action");
   } catch (error) {
+    const msg = error.message?.toLowerCase() || '';
+    let safeMessage = 'Unable to complete request. Please try again.';
+    if (msg.includes('missing')) safeMessage = error.message;
+    else if (msg.includes('invalid')) safeMessage = error.message;
+    else if (msg.includes('only admins')) safeMessage = 'Unauthorized access';
+    else if (msg.includes('already exists')) safeMessage = 'A user with this email already exists.';
+    else if (msg.includes('cannot')) safeMessage = error.message;
+    else if (msg.includes('already completed')) safeMessage = error.message;
+    else if (msg.includes('unknown action')) safeMessage = 'Unknown action';
+    else if (msg.includes('unauthorized') || msg.includes('missing authorization')) safeMessage = 'Unauthorized';
+    
+    console.error('manage-users error:', error.message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: safeMessage }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
