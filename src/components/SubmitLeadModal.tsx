@@ -155,7 +155,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
             <div>
-              <h2 className="font-display text-lg font-bold text-foreground">Submit New Lead</h2>
+              <h2 className="font-display text-lg font-bold text-foreground">Submit New Patient</h2>
               <p className="text-xs text-muted-foreground mt-0.5">Fill in patient and product details</p>
             </div>
             <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-muted">
@@ -329,7 +329,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                     Uploading...
                   </>
                 ) : (
-                  "Submit Lead"
+                  "Submit Patient"
                 )}
               </Button>
             </div>

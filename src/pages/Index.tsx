@@ -118,7 +118,8 @@ const Index = () => {
             <StatsBar leads={leads} />
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              {/* Mobile-only filters */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:hidden">
                 <Filter className="h-4 w-4 text-muted-foreground shrink-0 mr-1" />
                 {allStatuses.map((s) => (
                   <button
@@ -184,10 +185,28 @@ const Index = () => {
             )}
           </div>
 
-          {/* Right column: Prescriptions */}
+          {/* Right column: Prescriptions + Filters */}
           <div className="hidden lg:block">
-            <div className="sticky top-6">
+            <div className="sticky top-6 space-y-6">
               <InlinePrescriptions />
+
+              {/* Status filters */}
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">Filter by Status</h3>
+                {allStatuses.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => setStatusFilter(s.value)}
+                    className={`w-full flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                      statusFilter === s.value
+                        ? "swoosh-gradient text-white shadow-md"
+                        : "border border-border bg-card text-muted-foreground hover:bg-muted hover:border-primary/30"
+                    }`}
+                  >
+                    <span>{s.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
