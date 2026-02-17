@@ -43,7 +43,6 @@ async function sendInviteEmail(email: string, role: string, setupUrl: string) {
     return;
   }
 
-  const roleDisplay = role.charAt(0).toUpperCase() + role.slice(1);
   const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -58,7 +57,7 @@ async function sendInviteEmail(email: string, role: string, setupUrl: string) {
         <tr><td style="padding:40px;">
           <h2 style="margin:0 0 8px;color:#18181b;font-size:20px;font-weight:600;">You're Invited!</h2>
           <p style="margin:0 0 24px;color:#71717a;font-size:15px;line-height:1.6;">
-            You've been invited to join <strong style="color:#18181b;">Dexsora</strong> as a <strong style="color:#18181b;">${roleDisplay}</strong>. Click the button below to set up your account.
+            You've been invited to join <strong style="color:#18181b;">Dexsora</strong>. Click the button below to set up your account.
           </p>
           <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
             <a href="${setupUrl}" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:12px 32px;border-radius:8px;">Set Up Your Account</a>
@@ -87,7 +86,7 @@ async function sendInviteEmail(email: string, role: string, setupUrl: string) {
       body: JSON.stringify({
         from: "Dexsora <noreply@dexsora.com>",
         to: [email],
-        subject: `You're invited to join Dexsora as ${roleDisplay}`,
+        subject: "You're invited to join Dexsora",
         html: htmlContent,
       }),
     });

@@ -24,6 +24,7 @@ const Login = () => {
 
   }
 
+  if (user && user.user_metadata?.pending_setup) return <Navigate to="/setup-account" replace />;
   if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {

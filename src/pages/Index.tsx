@@ -32,6 +32,7 @@ const Index = () => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  if (user.user_metadata?.pending_setup) return <Navigate to="/setup-account" replace />;
   if (hasAdminAccess && !isDoctor) return <Navigate to="/admin" replace />;
 
   const currentRole = roles[0] || "doctor";
