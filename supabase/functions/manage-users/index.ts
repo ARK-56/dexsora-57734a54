@@ -63,6 +63,96 @@ Deno.serve(async (req) => {
 
     const { action, ...payload } = await req.json();
 
+    // New invite-based user creation (email only)
+    if (action === "invite_user") {
+      const { email, role } = payload;
+      if (!email) throw new Error("Missing email");
+      if (!isValidEmail(email)) throw new Error("Invalid email format");
+      if (!VALID_STAFF_ROLES.includes(role)) throw new Error("Invalid role. Must be one of: " + VALID_STAFF_ROLES.join(", "));
+
+      // Create user with a random password (they'll set their own via setup page)
+      const tempPassword = crypto.randomUUID() + "Aa1!";
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: false,
+        user_metadata: { pending_setup: true, assigned_role: role },
+      });
+
+      if (createError) throw createError;
+
+      // Assign role
+      const { error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: newUser.user.id, role });
+      if (roleError) throw roleError;
+
+      // Send invite link (magic link email)
+      const { error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
+        type: "invite",
+        email,
+        options: {
+          redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account`,
+        },
+      });
+
+      // Even if invite email fails, the user was created. We'll use the recovery flow as fallback.
+      // Send a password recovery email so user can set password
+      await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+      });
+
+      await logAudit(supabaseAdmin, caller.id, "invite_user", "user", newUser.user.id, { email, role });
+
+      return new Response(
+        JSON.stringify({ message: "Invitation sent", userId: newUser.user.id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "invite_doctor") {
+      const { email, npi } = payload;
+      if (!email) throw new Error("Missing email");
+      if (!isValidEmail(email)) throw new Error("Invalid email format");
+      if (npi && !isValidNPI(npi)) throw new Error("NPI must be exactly 10 digits");
+
+      const tempPassword = crypto.randomUUID() + "Aa1!";
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: false,
+        user_metadata: { pending_setup: true, assigned_role: "doctor", npi: npi || "" },
+      });
+
+      if (createError) throw createError;
+
+      // Assign doctor role
+      const { error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: newUser.user.id, role: "doctor" });
+      if (roleError) throw roleError;
+
+      // Update NPI on profile if provided
+      if (npi) {
+        await supabaseAdmin.from("profiles").update({ npi }).eq("user_id", newUser.user.id);
+      }
+
+      // Send invite/recovery email
+      await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+      });
+
+      await logAudit(supabaseAdmin, caller.id, "invite_doctor", "user", newUser.user.id, { email, npi });
+
+      return new Response(
+        JSON.stringify({ message: "Doctor invitation sent", userId: newUser.user.id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Legacy create actions (kept for backward compatibility)
     if (action === "create") {
       const { email, password, fullName, role } = payload;
       if (!email || !password || !role) throw new Error("Missing required fields");
@@ -137,7 +227,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "update") {
-      const { userId, fullName, email, role } = payload;
+      const { userId, fullName, email, role, password } = payload;
       if (!userId) throw new Error("Missing userId");
 
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
@@ -147,12 +237,20 @@ Deno.serve(async (req) => {
       if (fullName !== undefined && !isValidName(fullName)) throw new Error("Invalid name format");
       if (email !== undefined && !isValidEmail(email)) throw new Error("Invalid email format");
       if (role && !VALID_ALL_ROLES.includes(role)) throw new Error("Invalid role");
+      if (password !== undefined && !isValidPassword(password)) throw new Error("Password must be 8-128 characters");
 
       if (userId === caller.id && role && role !== "admin") {
         throw new Error("Cannot remove your own admin role");
       }
 
       const changes: Record<string, any> = {};
+
+      // Update password if provided
+      if (password) {
+        const { error: pwError } = await supabaseAdmin.auth.admin.updateUserById(userId, { password });
+        if (pwError) throw pwError;
+        changes.password_updated = true;
+      }
 
       if (fullName !== undefined || email !== undefined) {
         const updates: any = {};
