@@ -9,7 +9,8 @@ import { Trash2, RotateCcw, ArrowLeft } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 const Trash = () => {
-  const { user, loading, hasAdminAccess } = useAuth();
+  const { user, loading, hasAdminAccess, isSuperAdmin, isDoctor } = useAuth();
+  const isSuperAdminOnly = isSuperAdmin && !hasAdminAccess && !isDoctor;
   const { fetchTrashedLeads, restoreLeads, permanentDeleteLeads } = useLeads();
   const [trashedLeads, setTrashedLeads] = useState<DbLead[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -36,6 +37,7 @@ const Trash = () => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  if (isSuperAdminOnly) return <Navigate to="/super-admin" replace />;
 
   const handleRestore = async () => {
     if (selectedIds.length === 0) return;
