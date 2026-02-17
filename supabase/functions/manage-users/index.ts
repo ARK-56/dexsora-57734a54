@@ -102,7 +102,7 @@ async function sendInviteEmail(email: string, role: string, setupUrl: string) {
 }
 
 function getSetupBaseUrl() {
-  return Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || '';
+  return Deno.env.get("SITE_URL") || 'https://dexsora.lovable.app';
 }
 
 Deno.serve(async (req) => {
