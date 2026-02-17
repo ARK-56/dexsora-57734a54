@@ -16,6 +16,7 @@ import AdminPanel from "./pages/AdminPanel";
 import Profile from "./pages/Profile";
 import Trash from "./pages/Trash";
 import SetupAccount from "./pages/SetupAccount";
+import OrgSettings from "./pages/OrgSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="/admin" element={<AdminPanel />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/trash" element={<Trash />} />
+                <Route path="/org-settings" element={<OrgSettings />} />
                 <Route path="/setup-account" element={<SetupAccount />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
