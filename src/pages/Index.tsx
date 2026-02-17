@@ -14,7 +14,7 @@ import { Filter, Trash2 } from "lucide-react";
 import { useLeads, DbLead } from "@/hooks/useLeads";
 
 const Index = () => {
-  const { user, loading, hasAdminAccess, isDoctor, roles } = useAuth();
+  const { user, loading, hasAdminAccess, isDoctor, isSuperAdmin, roles } = useAuth();
   const { leads, loading: leadsLoading, createLead, updateLeadStatus, softDeleteLeads, permanentDeleteLeads } = useLeads();
   const [selectedLead, setSelectedLead] = useState<DbLead | null>(null);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
@@ -33,6 +33,7 @@ const Index = () => {
 
   if (!user) return <Navigate to="/login" replace />;
   if (user.user_metadata?.pending_setup) return <Navigate to="/setup-account" replace />;
+  if (isSuperAdmin && !hasAdminAccess && !isDoctor) return <Navigate to="/super-admin" replace />;
   if (hasAdminAccess && !isDoctor) return <Navigate to="/admin" replace />;
 
   const currentRole = roles[0] || "doctor";
