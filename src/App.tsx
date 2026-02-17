@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import PendingSetupGuard from "@/components/PendingSetupGuard";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import AdminPanel from "./pages/AdminPanel";
@@ -21,15 +22,17 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/trash" element={<Trash />} />
-            <Route path="/setup-account" element={<SetupAccount />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <PendingSetupGuard>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/trash" element={<Trash />} />
+              <Route path="/setup-account" element={<SetupAccount />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PendingSetupGuard>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
