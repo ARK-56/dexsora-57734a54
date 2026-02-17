@@ -67,11 +67,11 @@ const AdminPanel = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [showAddUser, setShowAddUser] = useState(false);
   const [showAddDoctor, setShowAddDoctor] = useState(false);
-  const [addForm, setAddForm] = useState({ fullName: "", email: "", password: "", role: "eligibility" as string });
-  const [doctorForm, setDoctorForm] = useState({ fullName: "", email: "", password: "", npi: "" });
+  const [addForm, setAddForm] = useState({ email: "", role: "eligibility" as string });
+  const [doctorForm, setDoctorForm] = useState({ email: "", npi: "" });
   const [adding, setAdding] = useState(false);
   const [editUser, setEditUser] = useState<ProfileRow | null>(null);
-  const [editForm, setEditForm] = useState({ fullName: "", email: "", role: "" });
+  const [editForm, setEditForm] = useState({ fullName: "", email: "", role: "", password: "" });
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"users" | "leads" | "chat">("leads");
   const [leadsSubTab, setLeadsSubTab] = useState<"all" | "eligibility" | "authorization" | "shipment" | "prepay" | "postpay" | "completed" | "denied" | "billed">("all");
@@ -161,25 +161,15 @@ const AdminPanel = () => {
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (addForm.password.length < 8) {
-      toast({ title: "Validation Error", description: "Password must be at least 8 characters.", variant: "destructive" });
-      return;
-    }
-    if (addForm.fullName.length > 100 || /[<>{}]/.test(addForm.fullName)) {
-      toast({ title: "Validation Error", description: "Invalid name format.", variant: "destructive" });
-      return;
-    }
     setAdding(true);
     try {
       await callManageUsers({
-        action: "create",
+        action: "invite_user",
         email: addForm.email.trim(),
-        password: addForm.password,
-        fullName: addForm.fullName.trim(),
         role: addForm.role,
       });
-      toast({ title: "User created", description: `${addForm.email} has been added.` });
-      setAddForm({ fullName: "", email: "", password: "", role: "eligibility" });
+      toast({ title: "Invitation sent", description: `An invitation has been sent to ${addForm.email}.` });
+      setAddForm({ email: "", role: "eligibility" });
       setShowAddUser(false);
       await fetchData();
     } catch (err: any) {
@@ -190,29 +180,19 @@ const AdminPanel = () => {
 
   const handleAddDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (doctorForm.password.length < 8) {
-      toast({ title: "Validation Error", description: "Password must be at least 8 characters.", variant: "destructive" });
-      return;
-    }
-    if (!/^\d{10}$/.test(doctorForm.npi)) {
+    if (doctorForm.npi && !/^\d{10}$/.test(doctorForm.npi)) {
       toast({ title: "Validation Error", description: "NPI must be exactly 10 digits.", variant: "destructive" });
-      return;
-    }
-    if (doctorForm.fullName.length > 100 || /[<>{}]/.test(doctorForm.fullName)) {
-      toast({ title: "Validation Error", description: "Invalid name format.", variant: "destructive" });
       return;
     }
     setAdding(true);
     try {
       await callManageUsers({
-        action: "create_doctor",
+        action: "invite_doctor",
         email: doctorForm.email.trim(),
-        password: doctorForm.password,
-        fullName: doctorForm.fullName.trim(),
         npi: doctorForm.npi.trim(),
       });
-      toast({ title: "Doctor created", description: `${doctorForm.email} has been added.` });
-      setDoctorForm({ fullName: "", email: "", password: "", npi: "" });
+      toast({ title: "Invitation sent", description: `An invitation has been sent to ${doctorForm.email}.` });
+      setDoctorForm({ email: "", npi: "" });
       setShowAddDoctor(false);
       await fetchData();
     } catch (err: any) {
@@ -224,21 +204,29 @@ const AdminPanel = () => {
   const openEditUser = (p: ProfileRow) => {
     const ur = getUserRoles(p.user_id);
     setEditUser(p);
-    setEditForm({ fullName: p.full_name || "", email: p.email || "", role: ur[0] || "" });
+    setEditForm({ fullName: p.full_name || "", email: p.email || "", role: ur[0] || "", password: "" });
   };
 
   const handleEditUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editUser) return;
+    if (editForm.password && editForm.password.length < 8) {
+      toast({ title: "Validation Error", description: "Password must be at least 8 characters.", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
-      await callManageUsers({
+      const payload: any = {
         action: "update",
         userId: editUser.user_id,
         fullName: editForm.fullName,
         email: editForm.email,
         role: editForm.role,
-      });
+      };
+      if (editForm.password) {
+        payload.password = editForm.password;
+      }
+      await callManageUsers(payload);
       toast({ title: "User updated", description: "Changes saved." });
       setEditUser(null);
       await fetchData();
@@ -614,23 +602,18 @@ const AdminPanel = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl animate-fade-in">
               <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                <h2 className="font-display text-lg font-bold text-foreground">Add Staff User</h2>
+                <div>
+                  <h2 className="font-display text-lg font-bold text-foreground">Invite Staff User</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">An invitation link will be sent to set up their account</p>
+                </div>
                 <button onClick={() => setShowAddUser(false)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted">
                   <X className="h-4 w-4 text-muted-foreground" />
                 </button>
               </div>
               <form onSubmit={handleAddUser} className="p-6 space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Full Name</label>
-                  <input type="text" value={addForm.fullName} onChange={(e) => setAddForm((p) => ({ ...p, fullName: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="John Doe" required />
-                </div>
-                <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Email</label>
                   <input type="email" value={addForm.email} onChange={(e) => setAddForm((p) => ({ ...p, email: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="user@company.com" required />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Password</label>
-                  <input type="password" value={addForm.password} onChange={(e) => setAddForm((p) => ({ ...p, password: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="••••••••" required minLength={8} />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Role</label>
@@ -643,7 +626,7 @@ const AdminPanel = () => {
                 <div className="flex justify-end gap-3 pt-2">
                   <button type="button" onClick={() => setShowAddUser(false)} className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted">Cancel</button>
                   <button type="submit" disabled={adding} className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90 disabled:opacity-50">
-                    {adding ? "Creating..." : "Create User"}
+                    {adding ? "Sending..." : "Send Invitation"}
                   </button>
                 </div>
               </form>
@@ -659,32 +642,27 @@ const AdminPanel = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl animate-fade-in">
               <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                <h2 className="font-display text-lg font-bold text-foreground">Add Doctor</h2>
+                <div>
+                  <h2 className="font-display text-lg font-bold text-foreground">Invite Doctor</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">An invitation link will be sent to set up their account</p>
+                </div>
                 <button onClick={() => setShowAddDoctor(false)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted">
                   <X className="h-4 w-4 text-muted-foreground" />
                 </button>
               </div>
               <form onSubmit={handleAddDoctor} className="p-6 space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Doctor Name</label>
-                  <input type="text" value={doctorForm.fullName} onChange={(e) => setDoctorForm((p) => ({ ...p, fullName: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="Dr. John Smith" required />
-                </div>
-                <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Email</label>
                   <input type="email" value={doctorForm.email} onChange={(e) => setDoctorForm((p) => ({ ...p, email: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="doctor@clinic.com" required />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Password</label>
-                  <input type="password" value={doctorForm.password} onChange={(e) => setDoctorForm((p) => ({ ...p, password: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="••••••••" required minLength={8} />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">NPI</label>
-                  <input type="text" value={doctorForm.npi} onChange={(e) => setDoctorForm((p) => ({ ...p, npi: e.target.value.replace(/\D/g, '').slice(0, 10) }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="1234567890" required pattern="\d{10}" title="NPI must be exactly 10 digits" maxLength={10} />
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">NPI (Optional)</label>
+                  <input type="text" value={doctorForm.npi} onChange={(e) => setDoctorForm((p) => ({ ...p, npi: e.target.value.replace(/\D/g, '').slice(0, 10) }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="1234567890" pattern="\d{10}" title="NPI must be exactly 10 digits" maxLength={10} />
                 </div>
                 <div className="flex justify-end gap-3 pt-2">
                   <button type="button" onClick={() => setShowAddDoctor(false)} className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted">Cancel</button>
                   <button type="submit" disabled={adding} className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90 disabled:opacity-50">
-                    {adding ? "Creating..." : "Create Doctor"}
+                    {adding ? "Sending..." : "Send Invitation"}
                   </button>
                 </div>
               </form>
@@ -721,6 +699,10 @@ const AdminPanel = () => {
                       <option key={r} value={r}>{formatRole(r)}</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">New Password (leave blank to keep current)</label>
+                  <input type="password" value={editForm.password} onChange={(e) => setEditForm((p) => ({ ...p, password: e.target.value }))} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring" placeholder="••••••••" minLength={8} />
                 </div>
                 <div className="flex justify-end gap-3 pt-2">
                   <button type="button" onClick={() => setEditUser(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted">Cancel</button>

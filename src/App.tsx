@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import AdminPanel from "./pages/AdminPanel";
 import Profile from "./pages/Profile";
 import Trash from "./pages/Trash";
+import SetupAccount from "./pages/SetupAccount";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/trash" element={<Trash />} />
+            <Route path="/setup-account" element={<SetupAccount />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
