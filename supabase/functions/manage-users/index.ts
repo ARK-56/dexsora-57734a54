@@ -102,7 +102,7 @@ async function sendInviteEmail(email: string, role: string, setupUrl: string) {
 }
 
 function getSetupBaseUrl() {
-  return 'https://dexsora.lovable.app';
+  return 'https://dexsora.com';
 }
 
 Deno.serve(async (req) => {
