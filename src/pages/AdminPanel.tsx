@@ -27,7 +27,7 @@ interface RoleRow {
   role: string;
 }
 
-const STAFF_ROLE_OPTIONS = ["eligibility", "shipment", "billing"] as const;
+const STAFF_ROLE_OPTIONS = ["admin", "eligibility", "shipment", "billing"] as const;
 const ALL_ROLE_OPTIONS = ["admin", "doctor", "eligibility", "shipment", "billing"] as const;
 
 const formatRole = (role: string) =>
