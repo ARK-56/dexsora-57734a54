@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil, FileText, Stethoscope, MessageSquare, MessageCircle, Trash2 } from "lucide-react";
+import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil, FileText, Stethoscope, MessageSquare, MessageCircle, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLeads, DbLead } from "@/hooks/useLeads";
@@ -84,6 +84,9 @@ const AdminPanel = () => {
   const [prescriptionOpen, setPrescriptionOpen] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [confirmDeleteUser, setConfirmDeleteUser] = useState<ProfileRow | null>(null);
+  const [userSearch, setUserSearch] = useState("");
+  const [userPage, setUserPage] = useState(1);
+  const USERS_PER_PAGE = 10;
 
   const fetchUnreadNotes = async () => {
     const { count } = await supabase
@@ -545,76 +548,143 @@ const AdminPanel = () => {
         )}
 
         {/* Users Tab */}
-        {activeTab === "users" && (
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
-            {loadingData ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+        {activeTab === "users" && (() => {
+          const searchLower = userSearch.toLowerCase();
+          const filteredProfiles = profiles.filter((p) => {
+            if (!userSearch) return true;
+            return (
+              (p.full_name || "").toLowerCase().includes(searchLower) ||
+              (p.email || "").toLowerCase().includes(searchLower) ||
+              getUserRoles(p.user_id).some((r) => r.toLowerCase().includes(searchLower))
+            );
+          });
+          const totalPages = Math.max(1, Math.ceil(filteredProfiles.length / USERS_PER_PAGE));
+          const currentPage = Math.min(userPage, totalPages);
+          const paginatedProfiles = filteredProfiles.slice((currentPage - 1) * USERS_PER_PAGE, currentPage * USERS_PER_PAGE);
+
+          return (
+            <div className="space-y-3">
+              {/* Search */}
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={userSearch}
+                  onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
+                  placeholder="Search users..."
+                  className="h-10 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
+                />
               </div>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Roles</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">NPI</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Joined</th>
-                    {isAdmin && <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {profiles.map((p) => (
-                    <tr key={p.user_id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-5 py-3.5">
-                        <p className="text-sm font-semibold text-foreground">{p.full_name || "—"}</p>
-                        <p className="text-xs text-muted-foreground">{p.email}</p>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex flex-wrap gap-1.5">
-                          {getUserRoles(p.user_id).length > 0 ? (
-                            getUserRoles(p.user_id).map((role) => (
-                              <span key={role} className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                                {formatRole(role)}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">No roles</span>
+
+              <div className="overflow-hidden rounded-xl border border-border bg-card">
+                {loadingData ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+                  </div>
+                ) : paginatedProfiles.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground">No users found.</div>
+                ) : (
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Roles</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">NPI</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Joined</th>
+                        {isAdmin && <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {paginatedProfiles.map((p) => (
+                        <tr key={p.user_id} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-5 py-3.5">
+                            <p className="text-sm font-semibold text-foreground">{p.full_name || "—"}</p>
+                            <p className="text-xs text-muted-foreground">{p.email}</p>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <div className="flex flex-wrap gap-1.5">
+                              {getUserRoles(p.user_id).length > 0 ? (
+                                getUserRoles(p.user_id).map((role) => (
+                                  <span key={role} className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                                    {formatRole(role)}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-xs text-muted-foreground italic">No roles</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-5 py-3.5 text-sm text-muted-foreground">
+                            {p.npi || "—"}
+                          </td>
+                          <td className="px-5 py-3.5 text-sm text-muted-foreground">
+                            {new Date(p.created_at).toLocaleDateString()}
+                          </td>
+                          {isAdmin && (
+                            <td className="px-5 py-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => openEditUser(p)}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
+                                  title="Edit user"
+                                >
+                                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDeleteUser(p)}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-destructive/30 hover:bg-destructive/10 transition-colors"
+                                  title="Delete user"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                </button>
+                              </div>
+                            </td>
                           )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-sm text-muted-foreground">
-                        {p.npi || "—"}
-                      </td>
-                      <td className="px-5 py-3.5 text-sm text-muted-foreground">
-                        {new Date(p.created_at).toLocaleDateString()}
-                      </td>
-                      {isAdmin && (
-                        <td className="px-5 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => openEditUser(p)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
-                              title="Edit user"
-                            >
-                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                            <button
-                              onClick={() => setConfirmDeleteUser(p)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-destructive/30 hover:bg-destructive/10 transition-colors"
-                              title="Delete user"
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                            </button>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {(currentPage - 1) * USERS_PER_PAGE + 1}–{Math.min(currentPage * USERS_PER_PAGE, filteredProfiles.length)} of {filteredProfiles.length}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setUserPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+                      <button
+                        key={pg}
+                        onClick={() => setUserPage(pg)}
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                          pg === currentPage ? "bg-primary text-primary-foreground" : "border border-border hover:bg-muted"
+                        }`}
+                      >
+                        {pg}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setUserPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Chat Tab */}
         {activeTab === "chat" && <AdminChat />}
