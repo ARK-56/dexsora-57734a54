@@ -7,6 +7,10 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import PendingSetupGuard from "@/components/PendingSetupGuard";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Pricing from "./pages/Pricing";
+import Onboarding from "./pages/Onboarding";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 import AdminPanel from "./pages/AdminPanel";
 import Profile from "./pages/Profile";
 import Trash from "./pages/Trash";
@@ -26,6 +30,10 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/checkout-success" element={<CheckoutSuccess />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/trash" element={<Trash />} />
