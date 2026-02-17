@@ -70,6 +70,11 @@ Deno.serve(async (req) => {
       if (!isValidEmail(email)) throw new Error("Invalid email format");
       if (!VALID_STAFF_ROLES.includes(role)) throw new Error("Invalid role. Must be one of: " + VALID_STAFF_ROLES.join(", "));
 
+      // Check if user already exists
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = existingUsers?.users?.find((u: any) => u.email === email);
+      if (existingUser) throw new Error("A user with this email already exists. Use the edit function to update their role.");
+
       // Create user with a random password (they'll set their own via setup page)
       const tempPassword = crypto.randomUUID() + "Aa1!";
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -116,6 +121,11 @@ Deno.serve(async (req) => {
       if (!email) throw new Error("Missing email");
       if (!isValidEmail(email)) throw new Error("Invalid email format");
       if (npi && !isValidNPI(npi)) throw new Error("NPI must be exactly 10 digits");
+
+      // Check if user already exists
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = existingUsers?.users?.find((u: any) => u.email === email);
+      if (existingUser) throw new Error("A user with this email already exists. Use the edit function to update their role.");
 
       const tempPassword = crypto.randomUUID() + "Aa1!";
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
