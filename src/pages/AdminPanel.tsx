@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil, FileText, Stethoscope, MessageSquare, MessageCircle, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil, FileText, Stethoscope, MessageSquare, MessageCircle, Trash2, Search, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLeads, DbLead } from "@/hooks/useLeads";
@@ -87,6 +87,7 @@ const AdminPanel = () => {
   const [userSearch, setUserSearch] = useState("");
   const [userPage, setUserPage] = useState(1);
   const USERS_PER_PAGE = 10;
+  const [resendingInvite, setResendingInvite] = useState<string | null>(null);
 
   const fetchUnreadNotes = async () => {
     const { count } = await supabase
@@ -253,6 +254,17 @@ const AdminPanel = () => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
     setDeletingUserId(null);
+  };
+
+  const handleResendInvite = async (userId: string, email: string) => {
+    setResendingInvite(userId);
+    try {
+      await callManageUsers({ action: "resend_invite", userId });
+      toast({ title: "Invitation resent", description: `A new invitation has been sent to ${email}.` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setResendingInvite(null);
   };
 
   const handleUpdateLeadStatus = async (leadId: string, newStatus: string) => {
@@ -623,6 +635,18 @@ const AdminPanel = () => {
                           {isAdmin && (
                             <td className="px-5 py-3.5 text-right">
                               <div className="flex items-center justify-end gap-1.5">
+                                {/* Show resend invite for users whose name equals their email (pending setup) */}
+                                {p.full_name === p.email && (
+                                  <button
+                                    onClick={() => handleResendInvite(p.user_id, p.email || "")}
+                                    disabled={resendingInvite === p.user_id}
+                                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-primary/30 bg-primary/5 px-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                                    title="Resend invitation"
+                                  >
+                                    <Send className="h-3 w-3" />
+                                    {resendingInvite === p.user_id ? "Sending..." : "Resend"}
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => openEditUser(p)}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
