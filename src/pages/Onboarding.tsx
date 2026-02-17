@@ -1,22 +1,18 @@
 import { useState } from "react";
-import { useSearchParams, Navigate } from "react-router-dom";
+import { useSearchParams, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Building2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-const PLAN_LABELS: Record<string, string> = {
-  single_monthly: "Single Org — $100/mo",
-  single_yearly: "Single Org — $1,200/yr",
-  multi_monthly: "Multi Org — $500/mo",
-  multi_yearly: "Multi Org — $6,000/yr",
-};
+import { useOrg } from "@/contexts/OrgContext";
 
 const Onboarding = () => {
   const { user, loading } = useAuth();
+  const { refreshOrgs } = useOrg();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const plan = searchParams.get("plan") || "";
+  const plan = searchParams.get("plan") || "single_monthly";
   const { toast } = useToast();
 
   const [orgName, setOrgName] = useState("");
@@ -31,13 +27,9 @@ const Onboarding = () => {
     );
   }
 
-  if (!user) return <Navigate to={`/signup?plan=${plan}`} replace />;
+  if (!user) return <Navigate to="/signup" replace />;
 
-  if (!plan || !PLAN_LABELS[plan]) {
-    return <Navigate to="/pricing" replace />;
-  }
-
-  const handleCheckout = async (e: React.FormEvent) => {
+  const handleCreateOrg = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -50,24 +42,44 @@ const Onboarding = () => {
     setSubmitting(true);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("create-checkout", {
-        body: { priceKey: plan, orgName: trimmed },
+      const planType = plan.startsWith("multi") ? "multi" : "single";
+
+      // Create org directly
+      const { data: org, error: orgError } = await supabase
+        .from("organizations")
+        .insert({
+          name: trimmed,
+          owner_id: user.id,
+          plan_type: planType,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (orgError) throw new Error(orgError.message);
+
+      // Add owner as admin member
+      await supabase.from("org_members").insert({
+        organization_id: org.id,
+        user_id: user.id,
+        role: "admin",
       });
 
-      if (fnError) throw new Error(fnError.message);
-      if (data?.error) throw new Error(data.error);
-      if (!data?.url) throw new Error("No checkout URL received");
+      // Create a free trial subscription record
+      await supabase.from("subscriptions").insert({
+        user_id: user.id,
+        organization_id: org.id,
+        plan_type: planType,
+        status: "active",
+      });
 
-      // Redirect to Stripe
-      window.location.href = data.url;
+      await refreshOrgs();
+
+      toast({ title: "Organization created!", description: "Welcome to Dexsora." });
+      navigate("/");
     } catch (err: any) {
-      setError(err.message || "Failed to start checkout");
+      setError(err.message || "Failed to create organization");
       setSubmitting(false);
-      toast({
-        title: "Checkout Error",
-        description: err.message || "Something went wrong",
-        variant: "destructive",
-      });
     }
   };
 
@@ -77,11 +89,11 @@ const Onboarding = () => {
         <div className="mb-6 text-center">
           <img alt="Dexsora" className="mx-auto h-16 mb-2" src="/lovable-uploads/9a9a6f34-256f-4cf9-a1a2-5b4b3ca9467f.png" />
           <div className="mt-3 inline-block rounded-full bg-white/10 px-4 py-1.5 text-xs font-medium text-white/80 border border-white/10">
-            {PLAN_LABELS[plan]}
+            Free Trial — Testing Mode
           </div>
         </div>
 
-        <form onSubmit={handleCheckout} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-8 shadow-xl space-y-6">
+        <form onSubmit={handleCreateOrg} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-8 shadow-xl space-y-6">
           <div className="text-center">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-white/10">
               <Building2 className="h-7 w-7 text-white" />
@@ -119,15 +131,15 @@ const Onboarding = () => {
           >
             {submitting ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" /> Redirecting to checkout...
+                <Loader2 className="h-4 w-4 animate-spin" /> Creating...
               </span>
             ) : (
-              "Continue to Payment"
+              "Create Organization"
             )}
           </Button>
 
           <p className="text-center text-xs text-white/40">
-            You'll be redirected to Stripe for secure payment
+            No payment required during testing
           </p>
         </form>
       </div>
