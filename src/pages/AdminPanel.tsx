@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil, FileText, Stethoscope, MessageSquare, MessageCircle } from "lucide-react";
+import { Users, Shield, Bell, ArrowLeft, UserPlus, X, Pencil, FileText, Stethoscope, MessageSquare, MessageCircle, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLeads, DbLead } from "@/hooks/useLeads";
@@ -82,6 +82,8 @@ const AdminPanel = () => {
   const [unreadNotesCount, setUnreadNotesCount] = useState(0);
   const [newLeadsCount, setNewLeadsCount] = useState(0);
   const [prescriptionOpen, setPrescriptionOpen] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<ProfileRow | null>(null);
 
   const fetchUnreadNotes = async () => {
     const { count } = await supabase
@@ -234,6 +236,20 @@ const AdminPanel = () => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
     setSaving(false);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!confirmDeleteUser) return;
+    setDeletingUserId(confirmDeleteUser.user_id);
+    try {
+      await callManageUsers({ action: "delete_user", userId: confirmDeleteUser.user_id });
+      toast({ title: "User deleted", description: `${confirmDeleteUser.full_name || confirmDeleteUser.email} has been removed.` });
+      setConfirmDeleteUser(null);
+      await fetchData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setDeletingUserId(null);
   };
 
   const handleUpdateLeadStatus = async (leadId: string, newStatus: string) => {
@@ -574,13 +590,22 @@ const AdminPanel = () => {
                       </td>
                       {isAdmin && (
                         <td className="px-5 py-3.5 text-right">
-                          <button
-                            onClick={() => openEditUser(p)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
-                            title="Edit user"
-                          >
-                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => openEditUser(p)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
+                              title="Edit user"
+                            >
+                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteUser(p)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-destructive/30 hover:bg-destructive/10 transition-colors"
+                              title="Delete user"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -765,6 +790,38 @@ const AdminPanel = () => {
         }}
       />
       <PrescriptionPanel open={prescriptionOpen} onClose={() => setPrescriptionOpen(false)} />
+
+      {/* Delete User Confirmation */}
+      {confirmDeleteUser && (
+        <>
+          <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm" onClick={() => setConfirmDeleteUser(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-sm rounded-2xl border border-border bg-card shadow-2xl animate-fade-in">
+              <div className="p-6 space-y-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mx-auto">
+                  <Trash2 className="h-6 w-6 text-destructive" />
+                </div>
+                <div className="text-center">
+                  <h3 className="font-display text-lg font-bold text-foreground">Delete User</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Are you sure you want to delete <span className="font-semibold text-foreground">{confirmDeleteUser.full_name || confirmDeleteUser.email}</span>? This action cannot be undone.
+                  </p>
+                </div>
+                <div className="flex justify-center gap-3 pt-2">
+                  <button onClick={() => setConfirmDeleteUser(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted">Cancel</button>
+                  <button
+                    onClick={handleDeleteUser}
+                    disabled={deletingUserId === confirmDeleteUser.user_id}
+                    className="rounded-lg bg-destructive px-6 py-2.5 text-sm font-semibold text-destructive-foreground shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
+                  >
+                    {deletingUserId === confirmDeleteUser.user_id ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
