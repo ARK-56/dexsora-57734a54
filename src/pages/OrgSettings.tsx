@@ -29,7 +29,7 @@ const formatRole = (role: string) =>
   role.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
 const OrgSettings = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isSuperAdmin, hasAdminAccess, isDoctor } = useAuth();
   const { currentOrg, isOrgOwner, isOrgAdmin, loading: orgLoading } = useOrg();
   const { toast } = useToast();
 
@@ -86,6 +86,7 @@ const OrgSettings = () => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  if (isSuperAdmin && !hasAdminAccess && !isDoctor) return <Navigate to="/super-admin" replace />;
   if (!currentOrg) return <Navigate to="/" replace />;
   if (!isOrgOwner && !isOrgAdmin) return <Navigate to="/" replace />;
 

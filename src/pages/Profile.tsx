@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
-  const { user, profile, loading, refreshProfile } = useAuth();
+  const { user, profile, loading, refreshProfile, isSuperAdmin, hasAdminAccess, isDoctor } = useAuth();
   const { toast } = useToast();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -38,6 +38,7 @@ const Profile = () => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  if (isSuperAdmin && !hasAdminAccess && !isDoctor) return <Navigate to="/super-admin" replace />;
 
   const fullName = profile?.full_name || "";
   const email = profile?.email || "";
