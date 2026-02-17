@@ -58,24 +58,35 @@ const Signup = () => {
 
     setSubmitting(true);
 
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/onboarding?plan=${plan}`,
-        data: { full_name: fullName.trim() },
-      },
-    });
+    try {
+      const res = await supabase.functions.invoke("signup-user", {
+        body: { email: email.trim(), password, fullName: fullName.trim(), plan },
+      });
 
-    if (signUpError) {
-      setError(signUpError.message);
+      if (res.error) {
+        const msg = typeof res.error === "object" && "message" in res.error
+          ? (res.error as any).message
+          : String(res.error);
+        setError(msg);
+        setSubmitting(false);
+        return;
+      }
+
+      // Check if the response contains an error field
+      const data = res.data as any;
+      if (data?.error) {
+        setError(data.error);
+        setSubmitting(false);
+        return;
+      }
+
+      setEmailSent(true);
       setSubmitting(false);
-      return;
+      toast({ title: "Check your email", description: "We sent you a verification link." });
+    } catch (err: any) {
+      setError(err.message || "Something went wrong. Please try again.");
+      setSubmitting(false);
     }
-
-    setEmailSent(true);
-    setSubmitting(false);
-    toast({ title: "Check your email", description: "We sent you a verification link." });
   };
 
   if (emailSent) {
