@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { NotificationPopup } from "./NotificationPopup";
 import { ThemeToggle } from "./ThemeToggle";
 import { OrgSwitcher } from "./OrgSwitcher";
-import { Search, LogOut, Settings, Trash2, Building2 } from "lucide-react";
+import { Search, LogOut, Settings, Trash2, Building2, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import dexsoraLogo from "@/assets/dexsora-logo.png";
 
@@ -17,7 +17,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }: HeaderProps) => {
-  const { user, profile, hasAdminAccess, signOut } = useAuth();
+  const { user, profile, hasAdminAccess, isSuperAdmin, signOut } = useAuth();
   const { isOrgOwner, isOrgAdmin } = useOrg();
   const [trashCount, setTrashCount] = useState(0);
   const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState<string | null>(null);
@@ -114,6 +114,15 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
             className="flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20">
               <Settings className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Admin</span>
+            </Link>
+          }
+
+          {isSuperAdmin &&
+          <Link
+            to="/super-admin"
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Platform</span>
             </Link>
           }
 

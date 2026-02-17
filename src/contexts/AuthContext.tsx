@@ -14,6 +14,7 @@ interface AuthContextType {
   isAdmin: boolean;
   hasAdminAccess: boolean;
   isDoctor: boolean;
+  isSuperAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -83,9 +84,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin = roles.includes("admin");
   const hasAdminAccess = roles.some((r) => ADMIN_ACCESS_ROLES.includes(r));
   const isDoctor = roles.includes("doctor");
+  const isSuperAdmin = roles.includes("super_admin");
 
   return (
-    <AuthContext.Provider value={{ user, profile, roles, isAdmin, hasAdminAccess, isDoctor, loading, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, roles, isAdmin, hasAdminAccess, isDoctor, isSuperAdmin, loading, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

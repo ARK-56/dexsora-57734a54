@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import Trash from "./pages/Trash";
 import SetupAccount from "./pages/SetupAccount";
 import OrgSettings from "./pages/OrgSettings";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/trash" element={<Trash />} />
                 <Route path="/org-settings" element={<OrgSettings />} />
+                <Route path="/super-admin" element={<SuperAdminDashboard />} />
                 <Route path="/setup-account" element={<SetupAccount />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
