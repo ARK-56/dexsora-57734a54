@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrg } from "@/contexts/OrgContext";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationPopup } from "./NotificationPopup";
 import { ThemeToggle } from "./ThemeToggle";
+import { OrgSwitcher } from "./OrgSwitcher";
 import { Search, LogOut, Settings, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import dexsoraLogo from "@/assets/dexsora-logo.png";
@@ -69,6 +71,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
         </Link>
 
         <div className="flex items-center gap-3">
+          <OrgSwitcher />
           <div className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
             <input
