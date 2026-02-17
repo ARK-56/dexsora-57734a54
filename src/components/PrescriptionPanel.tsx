@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, Upload, FileText, Download, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrg } from "@/contexts/OrgContext";
 import { useToast } from "@/hooks/use-toast";
 import { downloadFile } from "@/lib/downloadFile";
 import { getSignedUrl } from "@/lib/getSignedUrl";
@@ -21,6 +22,7 @@ interface PrescriptionPanelProps {
 
 export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => {
   const { user, hasAdminAccess } = useAuth();
+  const { currentOrg } = useOrg();
   const { toast } = useToast();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(false);
@@ -61,6 +63,7 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
         name: fileName || file.name,
         url: filePath,
         uploaded_by: user.id,
+        organization_id: currentOrg?.id || null,
       });
     }
 

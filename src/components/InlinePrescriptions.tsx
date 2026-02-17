@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Upload, FileText, Download, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrg } from "@/contexts/OrgContext";
 import { useToast } from "@/hooks/use-toast";
 import { downloadFile } from "@/lib/downloadFile";
 import { getSignedUrl } from "@/lib/getSignedUrl";
@@ -16,7 +17,9 @@ interface Prescription {
 
 export const InlinePrescriptions = () => {
   const { user, hasAdminAccess } = useAuth();
+  const { currentOrg, isOrgOwner, isOrgAdmin } = useOrg();
   const { toast } = useToast();
+  const canUpload = hasAdminAccess || isOrgOwner || isOrgAdmin;
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -55,6 +58,7 @@ export const InlinePrescriptions = () => {
         name: fileName || file.name,
         url: filePath,
         uploaded_by: user.id,
+        organization_id: currentOrg?.id || null,
       });
     }
 
@@ -80,7 +84,7 @@ export const InlinePrescriptions = () => {
       </div>
 
       <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-220px)]">
-        {hasAdminAccess && (
+        {canUpload && (
           <div className="rounded-lg border border-border bg-muted/10 p-3 space-y-2">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Upload</h3>
             <input
@@ -125,7 +129,7 @@ export const InlinePrescriptions = () => {
                   <button onClick={() => downloadFile(p.url, p.name)} className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0" title="Download">
                     <Download className="h-3 w-3" />
                   </button>
-                  {hasAdminAccess && (
+                  {canUpload && (
                     <button onClick={() => handleDelete(p.id)} className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0" title="Delete">
                       <Trash2 className="h-3 w-3" />
                     </button>

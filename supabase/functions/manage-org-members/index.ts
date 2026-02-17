@@ -47,7 +47,7 @@ async function sendOrgInviteEmail(email: string, orgName: string, role: string, 
 </html>`;
 
   try {
-    await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
       body: JSON.stringify({
@@ -57,6 +57,12 @@ async function sendOrgInviteEmail(email: string, orgName: string, role: string, 
         html,
       }),
     });
+    const resBody = await res.json();
+    if (!res.ok) {
+      console.error("Resend API error:", JSON.stringify(resBody));
+    } else {
+      console.log("Org invite email sent successfully to:", email);
+    }
   } catch (e) {
     console.error("Failed to send org invite email:", e);
   }
