@@ -59,7 +59,7 @@ const getAvailableStatuses = (currentStatus: string, roles: string[]): LeadStatu
 };
 
 const AdminPanel = () => {
-  const { hasAdminAccess, isAdmin, loading, roles, profile } = useAuth();
+  const { hasAdminAccess, isAdmin, loading, roles, profile, user } = useAuth();
   const { toast } = useToast();
   const { leads, loading: leadsLoading, updateLeadStatus } = useLeads();
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
@@ -140,6 +140,7 @@ const AdminPanel = () => {
     );
   }
 
+  if (user?.user_metadata?.pending_setup) return <Navigate to="/setup-account" replace />;
   if (!hasAdminAccess) return <Navigate to="/" replace />;
 
   const getUserRoles = (userId: string) =>
