@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
     const { action, ...payload } = await req.json();
 
-    // Invite-based user creation (email only)
+    // Invite-based user creation (email only) — uses Resend for branded email
     if (action === "invite_user") {
       const { email, role } = payload;
       if (!email) throw new Error("Missing email");
@@ -75,19 +75,51 @@ Deno.serve(async (req) => {
       const existingUser = existingUsers?.users?.find((u: any) => u.email === email);
       if (existingUser) throw new Error("A user with this email already exists. Use the edit function to update their role.");
 
-      // Use inviteUserByEmail to create user AND send the invite email
-      const { data: newUser, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        data: { pending_setup: true, assigned_role: role },
-        redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account`,
+      // Create user without sending default email — use a temp password
+      const tempPassword = crypto.randomUUID() + "Aa1!";
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: { pending_setup: true, assigned_role: role },
       });
 
-      if (inviteError) throw inviteError;
+      if (createError) throw createError;
 
       // Assign role
       const { error: roleError } = await supabaseAdmin
         .from("user_roles")
         .insert({ user_id: newUser.user.id, role });
       if (roleError) throw roleError;
+
+      // Generate a magic link for setup
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+        options: { redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account` },
+      });
+      if (linkError) throw linkError;
+
+      // Extract the token from the generated link
+      const actionLink = linkData?.properties?.action_link || "";
+      const setupUrl = actionLink || `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account`;
+
+      // Send branded email via Resend
+      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+      if (RESEND_API_KEY) {
+        const resendRes = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-invite`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({ email, role, setupUrl }),
+        });
+        const resendResult = await resendRes.json();
+        if (!resendRes.ok) {
+          console.error("Send invite failed:", resendResult);
+        }
+      }
 
       await logAudit(supabaseAdmin, caller.id, "invite_user", "user", newUser.user.id, { email, role });
 
@@ -108,13 +140,16 @@ Deno.serve(async (req) => {
       const existingUser = existingUsers?.users?.find((u: any) => u.email === email);
       if (existingUser) throw new Error("A user with this email already exists. Use the edit function to update their role.");
 
-      // Use inviteUserByEmail to create user AND send the invite email
-      const { data: newUser, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        data: { pending_setup: true, assigned_role: "doctor", npi: npi || "" },
-        redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account`,
+      // Create user without sending default email
+      const tempPassword = crypto.randomUUID() + "Aa1!";
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: { pending_setup: true, assigned_role: "doctor", npi: npi || "" },
       });
 
-      if (inviteError) throw inviteError;
+      if (createError) throw createError;
 
       // Assign doctor role
       const { error: roleError } = await supabaseAdmin
@@ -125,6 +160,34 @@ Deno.serve(async (req) => {
       // Update NPI on profile if provided
       if (npi) {
         await supabaseAdmin.from("profiles").update({ npi }).eq("user_id", newUser.user.id);
+      }
+
+      // Generate a magic link for setup
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+        options: { redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account` },
+      });
+      if (linkError) throw linkError;
+
+      const actionLink = linkData?.properties?.action_link || "";
+      const setupUrl = actionLink || `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || ''}/setup-account`;
+
+      // Send branded email via Resend
+      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+      if (RESEND_API_KEY) {
+        const resendRes = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-invite`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({ email, role: "doctor", setupUrl }),
+        });
+        const resendResult = await resendRes.json();
+        if (!resendRes.ok) {
+          console.error("Send invite failed:", resendResult);
+        }
       }
 
       await logAudit(supabaseAdmin, caller.id, "invite_doctor", "user", newUser.user.id, { email, npi });
