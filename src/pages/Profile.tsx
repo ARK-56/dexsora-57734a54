@@ -38,7 +38,7 @@ const Profile = () => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (isSuperAdmin && !hasAdminAccess && !isDoctor) return <Navigate to="/super-admin" replace />;
+  if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
 
   const fullName = profile?.full_name || "";
   const email = profile?.email || "";

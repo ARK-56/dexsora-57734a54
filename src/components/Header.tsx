@@ -18,7 +18,7 @@ interface HeaderProps {
 
 export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }: HeaderProps) => {
   const { user, profile, hasAdminAccess, isDoctor, isSuperAdmin, signOut } = useAuth();
-  const isSuperAdminOnly = isSuperAdmin && !hasAdminAccess && !isDoctor;
+  const isSuperAdminOnly = isSuperAdmin;
   const { isOrgOwner, isOrgAdmin } = useOrg();
   const [trashCount, setTrashCount] = useState(0);
   const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState<string | null>(null);
