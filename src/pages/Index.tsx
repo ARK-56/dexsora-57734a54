@@ -94,7 +94,6 @@ const Index = () => {
   };
 
   const allStatuses: { value: LeadStatus | "All"; label: string }[] = [
-    { value: "All", label: "All" },
     { value: "New Lead", label: "New Patient" },
     { value: "Pending", label: "Pending" },
     { value: "Need Additional Documents", label: "Need Additional Documents" },
@@ -103,6 +102,11 @@ const Index = () => {
     { value: "Delivered", label: "Delivered" },
     { value: "Not Eligible", label: "Not Eligible" },
   ];
+
+  const getCountForStatus = (status: LeadStatus | "All") => {
+    if (status === "All") return leads.length;
+    return leads.filter((l) => l.status === status).length;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -211,6 +215,9 @@ const Index = () => {
                     }`}
                   >
                     <span>{s.label}</span>
+                    <span className={`text-xs font-bold ${statusFilter === s.value ? "text-white/80" : "text-muted-foreground/60"}`}>
+                      {getCountForStatus(s.value)}
+                    </span>
                   </button>
                 ))}
               </div>
