@@ -68,7 +68,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="flex h-8 items-center justify-center px-1">
-            <img alt="Dexsora" className="h-7" src="/lovable-uploads/76210976-089d-4afd-a7e8-0a43c108a0a1.png" />
+            <img alt="Dexsora" className="h-9" src="/lovable-uploads/76210976-089d-4afd-a7e8-0a43c108a0a1.png" />
           </div>
         </Link>
 

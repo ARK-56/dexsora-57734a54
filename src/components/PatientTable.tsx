@@ -144,7 +144,7 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="bg-muted/50">
+              <tr className="swoosh-gradient">
                 <th className="w-10 px-3 py-3 text-center">
                   <input
                     type="checkbox"
@@ -153,16 +153,16 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
                     onChange={onToggleAll}
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Patient</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Patient</th>
                 <th className="w-20 px-3 py-3" />
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Status</th>
                 {hasAdminAccess && (
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Doctor</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Doctor</th>
                 )}
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order Date</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Item</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Docs</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Updated</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Order Date</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Item</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Docs</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Updated</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
