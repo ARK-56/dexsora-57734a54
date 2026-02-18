@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, UserPlus, Building2, Trash2, X, Stethoscope, Users } from "lucide-react";
+import { ArrowLeft, UserPlus, Building2, Trash2, X, Stethoscope, Users, Plus, Package } from "lucide-react";
 
 interface OrgMember {
   user_id: string;
@@ -179,6 +179,9 @@ const OrgSettings = () => {
           </div>
         </div>
 
+        {/* Items Management */}
+        <OrgItemsManager orgId={currentOrg.id} />
+
         {/* Members Table */}
         <div className="overflow-hidden rounded-xl border border-border bg-card">
           <div className="border-b border-border bg-muted/30 px-6 py-4">
@@ -346,6 +349,103 @@ const OrgSettings = () => {
           </div>
         </>
       )}
+    </div>
+  );
+};
+
+// Item management component
+const OrgItemsManager = ({ orgId }: { orgId: string }) => {
+  const { toast } = useToast();
+  const [items, setItems] = useState<{ id: string; name: string }[]>([]);
+  const [newItem, setNewItem] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const fetchItems = useCallback(async () => {
+    const { data } = await supabase
+      .from("org_items")
+      .select("id, name")
+      .eq("organization_id", orgId)
+      .order("name");
+    setItems((data as { id: string; name: string }[]) || []);
+    setLoading(false);
+  }, [orgId]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  const addItem = async () => {
+    const trimmed = newItem.replace(/[<>{}]/g, "").trim();
+    if (!trimmed || trimmed.length > 100) return;
+    const { error } = await supabase
+      .from("org_items")
+      .insert({ organization_id: orgId, name: trimmed });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setNewItem("");
+      fetchItems();
+      toast({ title: "Item added", description: `"${trimmed}" has been added.` });
+    }
+  };
+
+  const deleteItem = async (id: string) => {
+    await supabase.from("org_items").delete().eq("id", id);
+    fetchItems();
+    toast({ title: "Item removed" });
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card">
+      <div className="border-b border-border bg-muted/30 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Package className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold text-foreground">Product Items</h3>
+        </div>
+        <span className="text-xs text-muted-foreground">Items available to doctors in the New Patient form</span>
+      </div>
+      <div className="p-6 space-y-4">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newItem}
+            onChange={(e) => setNewItem(e.target.value.replace(/[<>{}]/g, ""))}
+            placeholder="e.g. Knee Brace, CPAP Machine"
+            maxLength={100}
+            className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/60"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addItem(); } }}
+          />
+          <button
+            onClick={addItem}
+            disabled={!newItem.trim()}
+            className="flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </button>
+        </div>
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic text-center py-4">No items yet. Add items that doctors can select when submitting patients.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {items.map((item) => (
+              <span key={item.id} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 pl-3 pr-1.5 py-1.5 text-sm text-foreground">
+                {item.name}
+                <button
+                  onClick={() => deleteItem(item.id)}
+                  className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

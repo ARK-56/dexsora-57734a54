@@ -5,7 +5,7 @@ import { Navigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import {
   ArrowLeft, Building2, Users, CreditCard, Activity,
-  Search, ChevronLeft, ChevronRight, ExternalLink,
+  Search, ChevronLeft, ChevronRight, X,
 } from "lucide-react";
 
 interface OrgRow {
@@ -16,6 +16,8 @@ interface OrgRow {
   owner_id: string;
   created_at: string;
   stripe_customer_id: string | null;
+  address: string | null;
+  phone: string | null;
 }
 
 interface SubRow {
@@ -56,7 +58,7 @@ const PER_PAGE = 15;
 
 const SuperAdminDashboard = () => {
   const { isSuperAdmin, loading: authLoading, user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"overview" | "orgs" | "subs" | "users">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "orgs" | "subs">("overview");
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
@@ -65,6 +67,7 @@ const SuperAdminDashboard = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [selectedOrg, setSelectedOrg] = useState<OrgRow | null>(null);
 
   useEffect(() => {
     if (!isSuperAdmin) return;
@@ -101,13 +104,11 @@ const SuperAdminDashboard = () => {
   const getOwnerEmail = (ownerId: string) => profiles.find((p) => p.user_id === ownerId)?.email || "—";
   const getMemberCount = (orgId: string) => orgMembers.filter((m) => m.organization_id === orgId).length;
 
-  // Stats
   const activeOrgs = orgs.filter((o) => o.is_active).length;
   const activeSubs = subs.filter((s) => s.status === "active").length;
   const totalUsers = profiles.length;
   const totalDoctors = userRoles.filter((r) => r.role === "doctor").length;
 
-  // Filtering + pagination helper
   const paginate = <T,>(items: T[]) => {
     const totalPages = Math.max(1, Math.ceil(items.length / PER_PAGE));
     const currentPage = Math.min(page, totalPages);
@@ -140,11 +141,20 @@ const SuperAdminDashboard = () => {
     <span className={`inline-block h-2 w-2 rounded-full ${active ? "bg-green-500" : "bg-muted-foreground/40"}`} />
   );
 
+  // Org detail drawer
+  const getOrgMembers = (orgId: string) => {
+    return orgMembers
+      .filter((m) => m.organization_id === orgId)
+      .map((m) => {
+        const profile = profiles.find((p) => p.user_id === m.user_id);
+        return { ...m, full_name: profile?.full_name || "—", email: profile?.email || "—", npi: profile?.npi || null };
+      });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="mx-auto max-w-[1400px] px-4 py-6 lg:px-6 space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
             <ArrowLeft className="h-4 w-4 text-muted-foreground" />
@@ -155,7 +165,6 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
 
-        {/* Stat Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: Building2, label: "Active Orgs", value: activeOrgs, total: orgs.length },
@@ -177,13 +186,12 @@ const SuperAdminDashboard = () => {
           ))}
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - removed Users tab */}
         <div className="flex gap-1 border-b border-border">
           {([
             { key: "overview" as const, label: "Overview" },
             { key: "orgs" as const, label: `Organizations (${orgs.length})` },
             { key: "subs" as const, label: `Subscriptions (${subs.length})` },
-            { key: "users" as const, label: `Users (${profiles.length})` },
           ]).map((tab) => (
             <button
               key={tab.key}
@@ -206,16 +214,15 @@ const SuperAdminDashboard = () => {
             {/* Overview */}
             {activeTab === "overview" && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Recent Orgs */}
                 <div className="rounded-xl border border-border bg-card">
                   <div className="border-b border-border px-6 py-4">
                     <h3 className="text-sm font-semibold text-foreground">Recent Organizations</h3>
                   </div>
                   <div className="divide-y divide-border">
                     {orgs.slice(0, 5).map((org) => (
-                      <div key={org.id} className="flex items-center justify-between px-6 py-3">
+                      <div key={org.id} className="flex items-center justify-between px-6 py-3 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedOrg(org)}>
                         <div>
-                          <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <p className="text-sm font-semibold text-primary flex items-center gap-2 hover:underline">
                             <StatusDot active={org.is_active} />
                             {org.name}
                           </p>
@@ -233,7 +240,6 @@ const SuperAdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Recent Subs */}
                 <div className="rounded-xl border border-border bg-card">
                   <div className="border-b border-border px-6 py-4">
                     <h3 className="text-sm font-semibold text-foreground">Recent Subscriptions</h3>
@@ -298,9 +304,9 @@ const SuperAdminDashboard = () => {
                       </thead>
                       <tbody className="divide-y divide-border">
                         {items.map((org) => (
-                          <tr key={org.id} className="hover:bg-muted/30 transition-colors">
+                          <tr key={org.id} className="hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => setSelectedOrg(org)}>
                             <td className="px-5 py-3.5">
-                              <p className="text-sm font-semibold text-foreground">{org.name}</p>
+                              <p className="text-sm font-semibold text-primary hover:underline">{org.name}</p>
                               <p className="text-xs text-muted-foreground font-mono">{org.id.slice(0, 8)}…</p>
                             </td>
                             <td className="px-5 py-3.5 text-sm text-muted-foreground">{getOwnerEmail(org.owner_id)}</td>
@@ -393,85 +399,94 @@ const SuperAdminDashboard = () => {
                 </div>
               );
             })()}
-
-            {/* Users Tab */}
-            {activeTab === "users" && (() => {
-              const searchLower = search.toLowerCase();
-              const filtered = profiles.filter((p) =>
-                !search ||
-                (p.full_name || "").toLowerCase().includes(searchLower) ||
-                (p.email || "").toLowerCase().includes(searchLower) ||
-                getUserRoles(p.user_id).some((r) => r.toLowerCase().includes(searchLower))
-              );
-              const { items, totalPages, currentPage, total } = paginate(filtered);
-              return (
-                <div className="space-y-3">
-                  <div className="relative max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                      placeholder="Search users..." className="h-10 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-ring" />
-                  </div>
-                  <div className="overflow-hidden rounded-xl border border-border bg-card">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-border bg-muted/50">
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</th>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Roles</th>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Organizations</th>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">NPI</th>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Joined</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {items.map((p) => {
-                          const userOrgs = orgMembers
-                            .filter((m) => m.user_id === p.user_id)
-                            .map((m) => getOrgName(m.organization_id))
-                            .filter((n) => n !== "—");
-                          return (
-                            <tr key={p.user_id} className="hover:bg-muted/30 transition-colors">
-                              <td className="px-5 py-3.5">
-                                <p className="text-sm font-semibold text-foreground">{p.full_name || "—"}</p>
-                                <p className="text-xs text-muted-foreground">{p.email}</p>
-                              </td>
-                              <td className="px-5 py-3.5">
-                                <div className="flex flex-wrap gap-1">
-                                  {getUserRoles(p.user_id).length > 0 ? getUserRoles(p.user_id).map((role) => (
-                                    <span key={role} className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                                      {formatRole(role)}
-                                    </span>
-                                  )) : (
-                                    <span className="text-xs text-muted-foreground italic">No roles</span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-5 py-3.5">
-                                <div className="flex flex-wrap gap-1">
-                                  {userOrgs.length > 0 ? userOrgs.map((name) => (
-                                    <span key={name} className="inline-flex rounded-full border border-accent bg-accent/50 px-2 py-0.5 text-xs font-medium text-accent-foreground">
-                                      {name}
-                                    </span>
-                                  )) : (
-                                    <span className="text-xs text-muted-foreground">—</span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-5 py-3.5 text-sm text-muted-foreground">{p.npi || "—"}</td>
-                              <td className="px-5 py-3.5 text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                    {items.length === 0 && <div className="py-12 text-center text-muted-foreground">No users found.</div>}
-                  </div>
-                  <Pagination totalPages={totalPages} currentPage={currentPage} total={total} />
-                </div>
-              );
-            })()}
           </>
         )}
       </main>
+
+      {/* Organization Detail Drawer */}
+      {selectedOrg && (
+        <>
+          <div className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm" onClick={() => setSelectedOrg(null)} />
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg border-l border-border bg-card shadow-2xl animate-fade-in overflow-y-auto">
+            <div className="sticky top-0 z-10 border-b border-border bg-card">
+              <div className="swoosh-gradient px-5 py-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-primary-foreground" />
+                    <h2 className="font-display text-lg font-bold text-primary-foreground">{selectedOrg.name}</h2>
+                  </div>
+                  <button onClick={() => setSelectedOrg(null)} className="flex h-7 w-7 items-center justify-center rounded-md bg-primary-foreground/10 transition-colors hover:bg-primary-foreground/20">
+                    <X className="h-4 w-4 text-primary-foreground" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-6">
+              {/* Org Info */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Organization Details</h3>
+                <div className="rounded-lg border border-border bg-muted/10 p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Plan</p>
+                      <p className="font-medium text-foreground">{selectedOrg.plan_type}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Status</p>
+                      <p className="font-medium text-foreground">{selectedOrg.is_active ? "Active" : "Inactive"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Owner</p>
+                      <p className="font-medium text-foreground">{getOwnerEmail(selectedOrg.owner_id)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Created</p>
+                      <p className="font-medium text-foreground">{new Date(selectedOrg.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-muted-foreground">Address</p>
+                      <p className="font-medium text-foreground">{selectedOrg.address || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Phone</p>
+                      <p className="font-medium text-foreground">{selectedOrg.phone || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Members */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Members ({getOrgMembers(selectedOrg.id).length})
+                </h3>
+                <div className="space-y-2">
+                  {getOrgMembers(selectedOrg.id).map((member) => (
+                    <div key={member.user_id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{member.full_name}</p>
+                        <p className="text-xs text-muted-foreground">{member.email}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {member.npi && (
+                          <span className="text-xs text-muted-foreground">NPI: {member.npi}</span>
+                        )}
+                        <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                          {formatRole(member.role)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {getOrgMembers(selectedOrg.id).length === 0 && (
+                    <p className="text-sm text-muted-foreground italic text-center py-4">No members found</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

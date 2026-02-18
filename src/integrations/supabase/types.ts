@@ -435,6 +435,38 @@ export type Database = {
           },
         ]
       }
+      org_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_members: {
         Row: {
           created_at: string
@@ -469,31 +501,37 @@ export type Database = {
       }
       organizations: {
         Row: {
+          address: string | null
           created_at: string
           id: string
           is_active: boolean
           name: string
           owner_id: string
+          phone: string | null
           plan_type: string
           stripe_customer_id: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           name: string
           owner_id: string
+          phone?: string | null
           plan_type?: string
           stripe_customer_id?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           name?: string
           owner_id?: string
+          phone?: string | null
           plan_type?: string
           stripe_customer_id?: string | null
           updated_at?: string

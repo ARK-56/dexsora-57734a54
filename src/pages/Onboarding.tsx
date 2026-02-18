@@ -16,6 +16,8 @@ const Onboarding = () => {
   const { toast } = useToast();
 
   const [orgName, setOrgName] = useState("");
+  const [orgAddress, setOrgAddress] = useState("");
+  const [orgPhone, setOrgPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,9 +35,21 @@ const Onboarding = () => {
     e.preventDefault();
     setError(null);
 
-    const trimmed = orgName.trim().replace(/[<>{}]/g, "");
+    const sanitize = (s: string) => s.replace(/[<>{}]/g, "").trim();
+    const trimmed = sanitize(orgName);
+    const address = sanitize(orgAddress);
+    const phone = sanitize(orgPhone);
+
     if (!trimmed || trimmed.length > 100) {
       setError("Please enter a valid organization name (max 100 characters)");
+      return;
+    }
+    if (!address || address.length > 300) {
+      setError("Please enter a valid address (max 300 characters)");
+      return;
+    }
+    if (!phone || !/^[\d\s()+-]+$/.test(phone)) {
+      setError("Please enter a valid phone number");
       return;
     }
 
@@ -44,7 +58,6 @@ const Onboarding = () => {
     try {
       const planType = plan.startsWith("multi") ? "multi" : "single";
 
-      // Create org directly
       const { data: org, error: orgError } = await supabase
         .from("organizations")
         .insert({
@@ -52,20 +65,20 @@ const Onboarding = () => {
           owner_id: user.id,
           plan_type: planType,
           is_active: true,
+          address,
+          phone,
         })
         .select()
         .single();
 
       if (orgError) throw new Error(orgError.message);
 
-      // Add owner as admin member
       await supabase.from("org_members").insert({
         organization_id: org.id,
         user_id: user.id,
         role: "admin",
       });
 
-      // Create a free trial subscription record
       await supabase.from("subscriptions").insert({
         user_id: user.id,
         organization_id: org.id,
@@ -98,9 +111,9 @@ const Onboarding = () => {
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-white/10">
               <Building2 className="h-7 w-7 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-white">Name your organization</h2>
+            <h2 className="text-xl font-bold text-white">Set up your organization</h2>
             <p className="mt-1 text-sm text-white/60">
-              This will be the name of your first organization on Dexsora.
+              Fill in your organization details to get started.
             </p>
           </div>
 
@@ -110,18 +123,46 @@ const Onboarding = () => {
             </div>
           )}
 
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-white/70">Organization Name</label>
-            <input
-              type="text"
-              value={orgName}
-              onChange={(e) => setOrgName(e.target.value.replace(/[<>{}]/g, ""))}
-              required
-              maxLength={100}
-              className="h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 text-sm text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
-              placeholder="e.g. Sunrise Medical Group"
-              autoFocus
-            />
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-white/70">Organization Name <span className="text-red-300">*</span></label>
+              <input
+                type="text"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value.replace(/[<>{}]/g, ""))}
+                required
+                maxLength={100}
+                className="h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 text-sm text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
+                placeholder="e.g. Sunrise Medical Group"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-white/70">Address <span className="text-red-300">*</span></label>
+              <input
+                type="text"
+                value={orgAddress}
+                onChange={(e) => setOrgAddress(e.target.value.replace(/[<>{}]/g, ""))}
+                required
+                maxLength={300}
+                className="h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 text-sm text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
+                placeholder="e.g. 123 Main St, City, State ZIP"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-white/70">Phone No <span className="text-red-300">*</span></label>
+              <input
+                type="tel"
+                value={orgPhone}
+                onChange={(e) => setOrgPhone(e.target.value)}
+                required
+                maxLength={20}
+                className="h-11 w-full rounded-lg border border-white/20 bg-white/10 px-4 text-sm text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
+                placeholder="e.g. (555) 123-4567"
+              />
+            </div>
           </div>
 
           <Button
