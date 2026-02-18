@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PatientDrawer } from "@/components/PatientDrawer";
 import { AdminChat } from "@/components/AdminChat";
 import { PrescriptionPanel } from "@/components/PrescriptionPanel";
+import { useOrg } from "@/contexts/OrgContext";
 
 interface ProfileRow {
   user_id: string;
@@ -60,6 +61,7 @@ const getAvailableStatuses = (currentStatus: string, roles: string[]): LeadStatu
 
 const AdminPanel = () => {
   const { hasAdminAccess, isAdmin, loading, roles, profile, user, isSuperAdmin, isDoctor } = useAuth();
+  const { isOrgOwner, isOrgAdmin } = useOrg();
   const { toast } = useToast();
   const { leads, loading: leadsLoading, updateLeadStatus } = useLeads();
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
@@ -142,7 +144,7 @@ const AdminPanel = () => {
 
   if (user?.user_metadata?.pending_setup) return <Navigate to="/setup-account" replace />;
   if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
-  if (!hasAdminAccess) return <Navigate to="/" replace />;
+  if (!hasAdminAccess && !isOrgOwner && !isOrgAdmin) return <Navigate to="/" replace />;
 
   const getUserRoles = (userId: string) =>
     userRoles.filter((r) => r.user_id === userId).map((r) => r.role);
