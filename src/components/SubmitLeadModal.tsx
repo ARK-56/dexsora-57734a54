@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { X, Upload, FileText, Trash2, CalendarIcon, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { X, Upload, FileText, Trash2, CalendarIcon, Loader2, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { useOrg } from "@/contexts/OrgContext";
+
+interface OrgItem {
+  id: string;
+  name: string;
+}
 
 interface SubmitLeadModalProps {
   isOpen: boolean;
@@ -24,6 +30,7 @@ interface SubmitLeadModalProps {
 
 export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalProps) => {
   const { toast } = useToast();
+  const { currentOrg } = useOrg();
   const [form, setForm] = useState({
     patientName: "",
     dob: "",
@@ -37,6 +44,21 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [orgItems, setOrgItems] = useState<OrgItem[]>([]);
+  const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !currentOrg) return;
+    const fetchItems = async () => {
+      const { data } = await supabase
+        .from("org_items")
+        .select("id, name")
+        .eq("organization_id", currentOrg.id)
+        .order("name");
+      setOrgItems((data as OrgItem[]) || []);
+    };
+    fetchItems();
+  }, [isOpen, currentOrg?.id]);
 
   if (!isOpen) return null;
 
@@ -48,7 +70,6 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
   };
 
   const autoFormatDate = (value: string) => {
-    // Strip non-digits
     const digits = value.replace(/\D/g, "");
     let formatted = "";
     if (digits.length <= 2) {
@@ -75,7 +96,6 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Client-side validation
     const sanitize = (s: string) => s.replace(/[<>{}]/g, '').trim();
     const sanitizedForm = {
       patientName: sanitize(form.patientName),
@@ -122,7 +142,6 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
           variant: "destructive",
         });
       } else {
-        // Store file path (not public URL) since bucket is private
         uploadedDocs.push({ name: file.name, url: filePath });
       }
       
@@ -185,7 +204,6 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                       onChange={(e) => {
                         const formatted = autoFormatDate(e.target.value);
                         setForm((p) => ({ ...p, dob: formatted }));
-                        // Try to parse when complete (MM/DD/YYYY = 10 chars)
                         if (formatted.length === 10) {
                           const parsed = new Date(formatted);
                           if (!isNaN(parsed.getTime()) && parsed < new Date()) {
@@ -241,7 +259,54 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                 <span className="h-px flex-1 bg-border" />
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Item" value={form.item} onChange={set("item")} required placeholder="e.g. Knee Brace" />
+                {/* Item dropdown */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Item <span className="text-destructive">*</span>
+                  </label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setItemDropdownOpen(!itemDropdownOpen)}
+                      className="flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
+                    >
+                      <span className={form.item ? "text-foreground" : "text-muted-foreground/60"}>
+                        {form.item || "Select item"}
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    {itemDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setItemDropdownOpen(false)} />
+                        <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
+                          {orgItems.length === 0 ? (
+                            <div className="px-3 py-4 text-xs text-muted-foreground text-center italic">
+                              No items configured by your admin
+                            </div>
+                          ) : (
+                            orgItems.map((item) => (
+                              <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => {
+                                  setForm((p) => ({ ...p, item: item.name }));
+                                  setItemDropdownOpen(false);
+                                }}
+                                className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${
+                                  form.item === item.name ? "bg-primary/10 text-primary font-medium" : "text-foreground"
+                                }`}
+                              >
+                                {item.name}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {/* Hidden required input for form validation */}
+                  <input type="text" value={form.item} required className="sr-only" tabIndex={-1} onChange={() => {}} />
+                </div>
                 <Field label="Diagnosis" value={form.diagnosis} onChange={set("diagnosis")} required placeholder="e.g. M17.11" />
               </div>
             </div>
