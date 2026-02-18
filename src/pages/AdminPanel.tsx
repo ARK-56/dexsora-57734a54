@@ -39,8 +39,8 @@ const ALL_STATUSES: LeadStatus[] = [
   "Shipped", "Delivered", "Auth Applied", "Auth Approved", "Pre Payment Request", "Post Payment Request", "Billed", "Paid", "Denied", "Completed",
 ];
 
-const getAvailableStatuses = (currentStatus: string, roles: string[]): LeadStatus[] => {
-  const isAdmin = roles.includes("admin");
+const getAvailableStatuses = (currentStatus: string, roles: string[], isOrgOwnerOrAdmin: boolean): LeadStatus[] => {
+  const isAdmin = roles.includes("admin") || isOrgOwnerOrAdmin;
   if (isAdmin) return ALL_STATUSES;
 
   const isEligibility = roles.includes("eligibility");
@@ -300,7 +300,7 @@ const AdminPanel = () => {
     setAddingNote(false);
   };
 
-  const availableStatusesForRole = (currentStatus: string) => getAvailableStatuses(currentStatus, roles);
+  const availableStatusesForRole = (currentStatus: string) => getAvailableStatuses(currentStatus, roles, isOrgOwner || isOrgAdmin);
 
   return (
     <div className="min-h-screen bg-background">
@@ -458,14 +458,14 @@ const AdminPanel = () => {
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse text-sm">
                         <thead>
-                          <tr className="border-b border-border bg-muted/50">
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Patient</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Doctor</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Item</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Docs</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order Date</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
+                          <tr className="swoosh-gradient">
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Patient</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Doctor</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Status</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Item</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Docs</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Order Date</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -602,12 +602,12 @@ const AdminPanel = () => {
                 ) : (
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-border bg-muted/50">
-                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</th>
-                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Roles</th>
-                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">NPI</th>
-                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Joined</th>
-                        {isAdmin && <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>}
+                      <tr className="swoosh-gradient">
+                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">User</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Roles</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">NPI</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Joined</th>
+                        {isAdmin && <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-white/90">Actions</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
