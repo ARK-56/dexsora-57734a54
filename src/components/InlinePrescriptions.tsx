@@ -57,7 +57,7 @@ export const InlinePrescriptions = () => {
           </span>
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[80vw] w-[80vw] max-h-[80vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
