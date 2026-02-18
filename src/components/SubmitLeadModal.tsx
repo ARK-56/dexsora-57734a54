@@ -39,6 +39,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     item: "",
     diagnosis: "",
   });
+  const [certified, setCertified] = useState(true);
   const [dobDate, setDobDate] = useState<Date | undefined>();
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -378,6 +379,20 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
               </div>
             )}
 
+            {/* Certification */}
+            <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/20 p-4">
+              <input
+                type="checkbox"
+                checked={certified}
+                onChange={(e) => setCertified(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-input text-primary accent-primary shrink-0"
+                required
+              />
+              <label className="text-xs text-muted-foreground leading-relaxed cursor-pointer" onClick={() => setCertified(!certified)}>
+                I certify that the prescribed medical equipment is/are medically necessary for the patient's health and well being. In my expert opinion, as their medical doctor, the medical equipment is/are reasonable and necessary part(s) of the treatment of patient care and rehabilitation.
+              </label>
+            </div>
+
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-2 border-t border-border">
               <Button type="button" variant="outline" onClick={onClose} disabled={uploading}>
@@ -385,7 +400,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
               </Button>
               <Button
                 type="submit"
-                disabled={uploading || !form.patientName || !form.dob || !form.phone || !form.address || !form.item || !form.diagnosis}
+                disabled={uploading || !form.patientName || !form.dob || !form.phone || !form.address || !form.item || !form.diagnosis || !certified}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-[120px]"
               >
                 {uploading ? (
