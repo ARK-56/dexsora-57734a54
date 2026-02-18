@@ -64,7 +64,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
   profile?.email?.[0]?.toUpperCase() || "?";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 swoosh-gradient">
+    <header className="sticky top-0 z-30 border-b border-white/10" style={{ background: 'linear-gradient(315deg, hsl(183 100% 35%) 0%, hsl(160 60% 50%) 100%)' }}>
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="flex h-8 items-center justify-center px-1">
