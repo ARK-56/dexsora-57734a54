@@ -158,6 +158,7 @@ export const useLeads = () => {
         name: d.name,
         url: d.url,
         uploaded_by: user.id,
+        organization_id: currentOrg?.id || null,
       }));
       await supabase.from("lead_documents").insert(docInserts);
     }
