@@ -196,13 +196,13 @@ const OrgSettings = () => {
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Member</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">NPI</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Joined</th>
+                <tr className="swoosh-gradient">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Member</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">NPI</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Joined</th>
                   {isOrgOwner && (
-                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-white/90">Actions</th>
                   )}
                 </tr>
               </thead>
