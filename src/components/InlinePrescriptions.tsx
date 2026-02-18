@@ -75,22 +75,24 @@ export const InlinePrescriptions = () => {
           ) : prescriptions.length === 0 ? (
             <p className="text-sm text-muted-foreground italic py-8 text-center">No prescriptions yet</p>
           ) : (
-            <div className="space-y-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {prescriptions.map((p) => (
-                <div key={p.id} className="flex items-center gap-2 rounded-lg border border-border p-2.5 transition-all hover:bg-muted/30 hover:border-primary/30 group">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors shrink-0">
-                    <FileText className="h-4 w-4" />
+                <div key={p.id} className="flex flex-col items-center gap-2 rounded-xl border border-border p-4 transition-all hover:bg-muted/30 hover:border-primary/30 group">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                    <FileText className="h-6 w-6" />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="text-center min-w-0 w-full">
                     <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
                     <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
                   </div>
-                  <button onClick={async () => { const url = await getSignedUrl("lead-documents", p.url); window.open(url, "_blank"); }} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0" title="View">
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </button>
-                  <button onClick={() => downloadFile(p.url, p.name)} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0" title="Download">
-                    <Download className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button onClick={async () => { const url = await getSignedUrl("lead-documents", p.url); window.open(url, "_blank"); }} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title="View">
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => downloadFile(p.url, p.name)} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors" title="Download">
+                      <Download className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
