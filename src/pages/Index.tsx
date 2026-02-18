@@ -119,7 +119,7 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
           {/* Left column: Leads */}
           <div className="space-y-6 min-w-0">
-            <LifecycleBar />
+            <LifecycleBar onStatusFilter={setStatusFilter} activeStatus={statusFilter} />
             <StatsBar leads={leads} />
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
