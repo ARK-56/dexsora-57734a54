@@ -22,19 +22,27 @@ interface PrescriptionPanelProps {
 
 export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => {
   const { user, hasAdminAccess } = useAuth();
-  const { currentOrg } = useOrg();
+  const { currentOrg, isOrgOwner, isOrgAdmin } = useOrg();
   const { toast } = useToast();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState("");
 
+  const canManagePrescriptions = hasAdminAccess || isOrgOwner || isOrgAdmin;
+
   const fetchPrescriptions = async () => {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("prescriptions")
       .select("*")
       .order("created_at", { ascending: false });
+
+    if (currentOrg) {
+      query = query.eq("organization_id", currentOrg.id);
+    }
+
+    const { data } = await query;
     setPrescriptions((data as Prescription[]) || []);
     setLoading(false);
   };
@@ -101,7 +109,7 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
 
         <div className="p-5 space-y-5">
           {/* Admin upload */}
-          {hasAdminAccess && (
+          {canManagePrescriptions && (
             <div className="rounded-lg border border-border bg-muted/10 p-4 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Upload Prescription</h3>
               <div>
@@ -150,7 +158,7 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
                     <button onClick={() => downloadFile(p.url, p.name)} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0" title="Download">
                       <Download className="h-3.5 w-3.5" />
                     </button>
-                    {hasAdminAccess && (
+                    {canManagePrescriptions && (
                       <button onClick={() => handleDelete(p.id)} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0" title="Delete">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
