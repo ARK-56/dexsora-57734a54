@@ -97,11 +97,11 @@ const Index = () => {
     { value: "All", label: "All" },
     { value: "New Lead", label: "New Patient" },
     { value: "Pending", label: "Pending" },
-    { value: "Eligible", label: "Eligible" },
-    { value: "Not Eligible", label: "Not Eligible" },
     { value: "Need Additional Documents", label: "Need Additional Documents" },
+    { value: "Eligible", label: "Eligible" },
     { value: "Shipped", label: "Shipped" },
     { value: "Delivered", label: "Delivered" },
+    { value: "Not Eligible", label: "Not Eligible" },
   ];
 
   return (
