@@ -50,6 +50,11 @@ const App = () => (
           </OrgProvider>
         </AuthProvider>
       </BrowserRouter>
+      <div className="fixed bottom-4 left-4 z-50">
+        <span className="inline-flex items-center rounded-full swoosh-gradient px-3 py-1.5 text-[11px] font-medium text-white shadow-lg">
+          Powered by Squad Tech Solution
+        </span>
+      </div>
     </TooltipProvider>
   </QueryClientProvider>
 );
