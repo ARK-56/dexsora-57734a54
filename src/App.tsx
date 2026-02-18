@@ -51,8 +51,8 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
       <div className="fixed bottom-4 left-4 z-50">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-card/80 backdrop-blur-sm border border-border px-3.5 py-1.5 text-[11px] font-medium text-muted-foreground shadow-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+        <span className="inline-flex items-center gap-1.5 rounded-full swoosh-gradient px-3.5 py-1.5 text-[11px] font-medium text-primary-foreground shadow-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground animate-pulse" />
           Powered by Squad Tech Solution
         </span>
       </div>
