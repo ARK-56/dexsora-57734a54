@@ -35,8 +35,8 @@ const formatRole = (role: string) =>
   role.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
 const ALL_STATUSES: LeadStatus[] = [
-  "New Lead", "Pending", "Eligible", "Not Eligible", "Need Additional Documents",
-  "Shipped", "Delivered", "Auth Applied", "Auth Approved", "Pre Payment Request", "Post Payment Request", "Billed", "Paid", "Denied", "Completed",
+  "New Lead", "Pending", "Need Additional Documents", "Eligible", "Shipped", "Delivered",
+  "Need To Bill", "Billed", "PrePay Audit", "Appeal", "Paid", "Denied", "PostPay Audit", "Not Eligible",
 ];
 
 const getAvailableStatuses = (currentStatus: string, roles: string[], isOrgOwnerOrAdmin: boolean): LeadStatus[] => {

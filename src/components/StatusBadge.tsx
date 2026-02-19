@@ -17,6 +17,10 @@ const statusConfig: Record<LeadStatus, { bg: string; text: string; label: string
   Paid: { bg: "bg-success", text: "text-success-foreground", label: "PAID" },
   Denied: { bg: "bg-destructive", text: "text-destructive-foreground", label: "DENIED" },
   Completed: { bg: "bg-success", text: "text-success-foreground", label: "COMPLETED" },
+  "Need To Bill": { bg: "bg-warning", text: "text-warning-foreground", label: "NEED TO BILL" },
+  "PrePay Audit": { bg: "bg-primary", text: "text-primary-foreground", label: "PREPAY AUDIT" },
+  Appeal: { bg: "bg-destructive", text: "text-destructive-foreground", label: "APPEAL" },
+  "PostPay Audit": { bg: "bg-primary", text: "text-primary-foreground", label: "POSTPAY AUDIT" },
 };
 
 export const StatusBadge = ({ status }: { status: LeadStatus }) => {
