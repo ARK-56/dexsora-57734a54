@@ -202,34 +202,45 @@ const Index = () => {
               <InlinePrescriptions />
 
               {/* Status filters */}
-              <div className="rounded-2xl border border-border bg-card p-1.5 shadow-sm">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-3 pt-2 pb-1.5">Status</h3>
-                {allStatuses.map((s) => {
-                  const count = getCountForStatus(s.value);
-                  const isActive = statusFilter === s.value;
-                  return (
-                    <button
-                      key={s.value}
-                      onClick={() => setStatusFilter(s.value)}
-                      className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-sm transition-all ${
-                        isActive
-                          ? "swoosh-gradient text-white shadow-md font-semibold"
-                          : "text-foreground/80 hover:bg-muted font-medium"
-                      }`}
-                    >
-                      <span>{s.label}</span>
-                      <span className={`min-w-[20px] text-center text-xs font-bold rounded-full px-1.5 py-0.5 ${
-                        isActive
-                          ? "bg-white/20 text-white"
-                          : count > 0
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground/40"
-                      }`}>
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="rounded-2xl border border-border/50 bg-card shadow-sm overflow-hidden">
+                <div className="swoosh-gradient px-4 py-2.5">
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-white/80">Filter by Status</h3>
+                </div>
+                <div className="p-1.5 space-y-0.5">
+                  {allStatuses.map((s) => {
+                    const count = getCountForStatus(s.value);
+                    const isActive = statusFilter === s.value;
+                    return (
+                      <button
+                        key={s.value}
+                        onClick={() => setStatusFilter(s.value)}
+                        className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all duration-200 group ${
+                          isActive
+                            ? "bg-accent text-accent-foreground font-semibold shadow-sm border border-primary/20"
+                            : "text-foreground/70 hover:bg-muted/80 font-medium"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className={`h-2 w-2 rounded-full transition-all ${
+                            isActive
+                              ? "bg-primary shadow-[0_0_6px_hsl(183_100%_35%/0.5)]"
+                              : "bg-muted-foreground/25 group-hover:bg-muted-foreground/40"
+                          }`} />
+                          <span>{s.label}</span>
+                        </div>
+                        <span className={`min-w-[24px] text-center text-xs font-bold rounded-full px-2 py-0.5 transition-all ${
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : count > 0
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground/30"
+                        }`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
