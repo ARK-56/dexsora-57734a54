@@ -53,6 +53,10 @@ export const PrescriptionPanel = ({ open, onClose }: PrescriptionPanelProps) => 
 
   const handleUpload = async (files: FileList | null) => {
     if (!files || files.length === 0 || !user) return;
+    if (!fileName.trim()) {
+      toast({ title: "File name required", description: "Please enter a file name before uploading.", variant: "destructive" });
+      return;
+    }
     setUploading(true);
 
     for (const file of Array.from(files)) {
