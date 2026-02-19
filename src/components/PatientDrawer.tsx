@@ -104,6 +104,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
           url: filePath,
           uploaded_by: user.id,
           is_admin_only: hasAdminAccess,
+          organization_id: lead.organization_id ?? null,
         } as any);
       }
       toast({ title: "Uploaded", description: `${files.length} document(s) uploaded.` });

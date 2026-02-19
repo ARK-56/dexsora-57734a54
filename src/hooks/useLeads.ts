@@ -22,6 +22,7 @@ export interface DbLead {
   denial_reason: string | null;
   tracking_number: string | null;
   submitted_by: string | null;
+  organization_id: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
