@@ -36,6 +36,9 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     dob: "",
     phone: "",
     address: "",
+    city: "",
+    state: "",
+    zip: "",
     item: "",
     diagnosis: "",
   });
@@ -102,7 +105,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
       patientName: sanitize(form.patientName),
       dob: form.dob,
       phone: sanitize(form.phone),
-      address: sanitize(form.address),
+      address: [sanitize(form.address), sanitize(form.city), sanitize(form.state), sanitize(form.zip)].filter(Boolean).join(", "),
       item: sanitize(form.item),
       diagnosis: sanitize(form.diagnosis),
     };
@@ -150,7 +153,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     }
 
     onSubmit({ ...sanitizedForm, documents: uploadedDocs });
-    setForm({ patientName: "", dob: "", phone: "", address: "", item: "", diagnosis: "" });
+    setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", diagnosis: "" });
     setDobDate(undefined);
     setFiles([]);
     setUploading(false);
@@ -246,9 +249,10 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                   </div>
                 </div>
                 <Field label="Phone No" value={form.phone} onChange={set("phone")} required placeholder="(555) 000-0000" />
-                <div className="col-span-2">
-                  <Field label="Address" value={form.address} onChange={set("address")} required placeholder="123 Main St, City, State ZIP" />
-                </div>
+                <Field label="Address" value={form.address} onChange={set("address")} required placeholder="123 Main St" />
+                <Field label="City" value={form.city} onChange={set("city")} required placeholder="City" />
+                <Field label="State" value={form.state} onChange={set("state")} required placeholder="State" />
+                <Field label="Zip Code" value={form.zip} onChange={set("zip")} required placeholder="ZIP" />
               </div>
             </div>
 
@@ -400,7 +404,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
               </Button>
               <Button
                 type="submit"
-                disabled={uploading || !form.patientName || !form.dob || !form.phone || !form.address || !form.item || !form.diagnosis || !certified}
+                disabled={uploading || !form.patientName || !form.dob || !form.phone || !form.address || !form.city || !form.state || !form.zip || !form.item || !form.diagnosis || !certified}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-[120px]"
               >
                 {uploading ? (
