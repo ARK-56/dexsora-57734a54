@@ -64,9 +64,12 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
   const { toast } = useToast();
   const [notes, setNotes] = useState<LeadNote[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [localDocs, setLocalDocs] = useState(lead?.documents ?? []);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (!lead) return;
+    setLocalDocs(lead.documents);
     supabase.from("lead_notes").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false })
       .then(({ data }) => setNotes(data || []));
   }, [lead?.id]);
@@ -75,10 +78,13 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
 
   // Filter admin-only docs for non-admin users
   const visibleDocs = hasAdminAccess
-    ? lead.documents
-    : lead.documents.filter((d) => !d.is_admin_only);
+    ? localDocs
+    : localDocs.filter((d) => !d.is_admin_only);
 
+  // Doctors can upload only when status is "Need Additional Documents"
   const canUploadAdditionalDocs = !hasAdminAccess && lead?.status === "Need Additional Documents";
+  // Org admins can upload docs on any status EXCEPT "Need Additional Documents" (that's doctor-only)
+  const canAdminUpload = hasAdminAccess && lead?.status !== "Need Additional Documents";
 
   const handleAdminUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -101,6 +107,14 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
         } as any);
       }
       toast({ title: "Uploaded", description: `${files.length} document(s) uploaded.` });
+
+      // Refresh documents locally so no page reload needed
+      const { data: freshDocs } = await supabase
+        .from("lead_documents")
+        .select("*")
+        .eq("lead_id", lead.id)
+        .order("created_at", { ascending: false });
+      if (freshDocs) setLocalDocs(freshDocs as any);
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
@@ -241,7 +255,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
 
           {/* Documents */}
           <Section title={`Documents (${visibleDocs.length})`}>
-            {(hasAdminAccess || canUploadAdditionalDocs) && (
+          {(canAdminUpload || canUploadAdditionalDocs) && (
               <div className="mb-3">
                 <input
                   ref={fileInputRef}
@@ -262,7 +276,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
                   className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50 w-full justify-center"
                 >
                   <Upload className="h-3.5 w-3.5" />
-                  {uploading ? "Uploading..." : hasAdminAccess ? "Upload Admin Document" : "Upload Additional Documents"}
+                  {uploading ? "Uploading..." : canAdminUpload ? "Upload Admin Document" : "Upload Additional Documents"}
                 </button>
               </div>
             )}
