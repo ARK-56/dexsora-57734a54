@@ -124,7 +124,7 @@ const Index = () => {
           {/* Left column: Leads */}
           <div className="space-y-6 min-w-0">
             <LifecycleBar onStatusFilter={setStatusFilter} activeStatus={statusFilter} />
-            <StatsBar leads={leads} />
+            
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               {/* Mobile-only filters */}
