@@ -61,7 +61,7 @@ const getAvailableStatuses = (currentStatus: string, roles: string[], isOrgOwner
 
 const AdminPanel = () => {
   const { hasAdminAccess, isAdmin, loading, roles, profile, user, isSuperAdmin, isDoctor } = useAuth();
-  const { isOrgOwner, isOrgAdmin } = useOrg();
+  const { isOrgOwner, isOrgAdmin, currentOrg } = useOrg();
   const { toast } = useToast();
   const { leads, loading: leadsLoading, updateLeadStatus } = useLeads();
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
@@ -281,15 +281,19 @@ const AdminPanel = () => {
     await updateLeadStatus(leadId, newStatus);
   };
 
+  
+
   const handleAddNote = async () => {
     if (!noteModal || !noteText.trim()) return;
     setAddingNote(true);
+    const orgId = currentOrg?.id ?? null;
     const { error } = await supabase.from("lead_notes").insert({
       lead_id: noteModal.leadId,
       text: noteText.trim(),
       author: profile?.full_name || "Admin",
       is_internal: false,
-    });
+      organization_id: orgId,
+    } as any);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
