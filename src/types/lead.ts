@@ -13,7 +13,11 @@ export type LeadStatus =
   | "Billed"
   | "Paid"
   | "Denied"
-  | "Completed";
+  | "Completed"
+  | "Need To Bill"
+  | "PrePay Audit"
+  | "Appeal"
+  | "PostPay Audit";
 
 export type UserRole = "doctor" | "admin" | "eligibility" | "shipment" | "billing";
 
