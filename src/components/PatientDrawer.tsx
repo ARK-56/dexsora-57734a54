@@ -78,6 +78,8 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
     ? lead.documents
     : lead.documents.filter((d) => !d.is_admin_only);
 
+  const canUploadAdditionalDocs = !hasAdminAccess && lead?.status === "Need Additional Documents";
+
   const handleAdminUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !lead || !user) return;
@@ -95,11 +97,10 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
           name: file.name,
           url: filePath,
           uploaded_by: user.id,
-          is_admin_only: true,
-        });
+          is_admin_only: hasAdminAccess,
+        } as any);
       }
       toast({ title: "Uploaded", description: `${files.length} document(s) uploaded.` });
-      // Refresh drawer by triggering a re-render (lead documents will update via realtime)
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
@@ -240,7 +241,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
 
           {/* Documents */}
           <Section title={`Documents (${visibleDocs.length})`}>
-            {hasAdminAccess && (
+            {(hasAdminAccess || canUploadAdditionalDocs) && (
               <div className="mb-3">
                 <input
                   ref={fileInputRef}
@@ -250,13 +251,18 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
                   className="hidden"
                   id="admin-doc-upload"
                 />
+                {canUploadAdditionalDocs && (
+                  <div className="mb-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                    Additional documents have been requested. Please upload them below.
+                  </div>
+                )}
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                   className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50 w-full justify-center"
                 >
                   <Upload className="h-3.5 w-3.5" />
-                  {uploading ? "Uploading..." : "Upload Admin Document"}
+                  {uploading ? "Uploading..." : hasAdminAccess ? "Upload Admin Document" : "Upload Additional Documents"}
                 </button>
               </div>
             )}
