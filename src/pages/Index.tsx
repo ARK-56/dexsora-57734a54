@@ -202,24 +202,34 @@ const Index = () => {
               <InlinePrescriptions />
 
               {/* Status filters */}
-              <div className="space-y-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">Filter by Status</h3>
-                {allStatuses.map((s) => (
-                  <button
-                    key={s.value}
-                    onClick={() => setStatusFilter(s.value)}
-                    className={`w-full flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
-                      statusFilter === s.value
-                        ? "swoosh-gradient text-white shadow-md"
-                        : "border border-border bg-card text-muted-foreground hover:bg-muted hover:border-primary/30"
-                    }`}
-                  >
-                    <span>{s.label}</span>
-                    <span className={`text-xs font-bold ${statusFilter === s.value ? "text-white/80" : "text-muted-foreground/60"}`}>
-                      {getCountForStatus(s.value)}
-                    </span>
-                  </button>
-                ))}
+              <div className="rounded-2xl border border-border bg-card p-1.5 shadow-sm">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-3 pt-2 pb-1.5">Status</h3>
+                {allStatuses.map((s) => {
+                  const count = getCountForStatus(s.value);
+                  const isActive = statusFilter === s.value;
+                  return (
+                    <button
+                      key={s.value}
+                      onClick={() => setStatusFilter(s.value)}
+                      className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-sm transition-all ${
+                        isActive
+                          ? "swoosh-gradient text-white shadow-md font-semibold"
+                          : "text-foreground/80 hover:bg-muted font-medium"
+                      }`}
+                    >
+                      <span>{s.label}</span>
+                      <span className={`min-w-[20px] text-center text-xs font-bold rounded-full px-1.5 py-0.5 ${
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : count > 0
+                            ? "bg-primary/10 text-primary"
+                            : "text-muted-foreground/40"
+                      }`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
