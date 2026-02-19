@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 const PAGE_SIZE = 10;
 
 // For doctor view: only lifecycle statuses shown as-is, everything else shows as "Delivered"
-const DOCTOR_LIFECYCLE_STATUSES = ["New Lead", "Pending", "Eligible", "Shipped", "Delivered"];
+const DOCTOR_LIFECYCLE_STATUSES = ["New Lead", "Pending", "Eligible", "Not Eligible", "Shipped", "Delivered"];
 const getDoctorDisplayStatus = (status: string, isAdmin: boolean): LeadStatus => {
   if (isAdmin) return status as LeadStatus;
   if (DOCTOR_LIFECYCLE_STATUSES.includes(status)) return status as LeadStatus;
