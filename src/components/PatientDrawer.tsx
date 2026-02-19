@@ -30,8 +30,8 @@ const ALL_STATUSES: LeadStatus[] = [
   "Shipped", "Delivered", "Auth Applied", "Billed", "Paid", "Denied",
 ];
 
-const getAvailableStatuses = (currentStatus: string, roles: string[]): LeadStatus[] => {
-  const isAdmin = roles.includes("admin");
+const getAvailableStatuses = (currentStatus: string, roles: string[], isAdminUser: boolean): LeadStatus[] => {
+  const isAdmin = roles.includes("admin") || isAdminUser;
   if (isAdmin) return ALL_STATUSES;
 
   const isEligibility = roles.includes("eligibility");
@@ -122,7 +122,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const availableStatuses = getAvailableStatuses(lead.status, roles);
+  const availableStatuses = getAvailableStatuses(lead.status, roles, hasAdminAccess);
 
   const initials = lead.patient_name
     .split(" ")
