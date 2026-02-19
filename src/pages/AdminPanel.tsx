@@ -76,7 +76,7 @@ const AdminPanel = () => {
   const [editForm, setEditForm] = useState({ fullName: "", email: "", role: "", password: "" });
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"users" | "leads" | "chat">("leads");
-  const [leadsSubTab, setLeadsSubTab] = useState<"all" | "eligibility" | "authorization" | "shipment" | "prepay" | "postpay" | "completed" | "denied" | "billed">("all");
+  const [leadsSubTab, setLeadsSubTab] = useState<"all" | "eligibility" | "authorization" | "shipment" | "prepay" | "postpay" | "completed" | "denied" | "billed" | "needtobill" | "prepayaudit" | "appeal" | "paid" | "postpayaudit">("all");
   const [noteModal, setNoteModal] = useState<{ leadId: string; patientName: string } | null>(null);
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
@@ -441,7 +441,7 @@ const AdminPanel = () => {
                     <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
                   </div>
                 ) : (() => {
-                  const categorizedStatuses = ["Eligible", "Not Eligible", "Need Additional Documents", "Auth Applied", "Auth Approved", "Shipped", "Delivered", "Pre Payment Request", "Post Payment Request", "Denied", "Billed", "Completed"];
+                  const categorizedStatuses = ["Eligible", "Not Eligible", "Need Additional Documents", "Auth Applied", "Auth Approved", "Shipped", "Delivered", "Pre Payment Request", "Post Payment Request", "Denied", "Billed", "Completed", "Need To Bill", "PrePay Audit", "Appeal", "Paid", "PostPay Audit"];
                   const filteredLeads = leadsSubTab === "all" ? leads.filter(l => !categorizedStatuses.includes(l.status))
                     : leadsSubTab === "eligibility" ? leads.filter(l => ["Eligible", "Not Eligible", "Need Additional Documents"].includes(l.status))
                     : leadsSubTab === "authorization" ? leads.filter(l => ["Auth Applied", "Auth Approved"].includes(l.status))
@@ -450,6 +450,11 @@ const AdminPanel = () => {
                     : leadsSubTab === "postpay" ? leads.filter(l => l.status === "Post Payment Request")
                     : leadsSubTab === "completed" ? leads.filter(l => l.status === "Completed")
                     : leadsSubTab === "denied" ? leads.filter(l => l.status === "Denied")
+                    : leadsSubTab === "needtobill" ? leads.filter(l => l.status === "Need To Bill")
+                    : leadsSubTab === "prepayaudit" ? leads.filter(l => l.status === "PrePay Audit")
+                    : leadsSubTab === "appeal" ? leads.filter(l => l.status === "Appeal")
+                    : leadsSubTab === "paid" ? leads.filter(l => l.status === "Paid")
+                    : leadsSubTab === "postpayaudit" ? leads.filter(l => l.status === "PostPay Audit")
                     : leads.filter(l => l.status === "Billed");
 
                   return filteredLeads.length === 0 ? (
@@ -532,13 +537,18 @@ const AdminPanel = () => {
             <div className="hidden lg:block">
               <div className="sticky top-6 space-y-2">
                 {([
-                  { key: "all" as const, label: "All Leads", count: leads.filter(l => !["Eligible", "Not Eligible", "Need Additional Documents", "Auth Applied", "Auth Approved", "Shipped", "Delivered", "Pre Payment Request", "Post Payment Request", "Denied", "Billed", "Completed"].includes(l.status)).length },
+                  { key: "all" as const, label: "All Leads", count: leads.filter(l => !["Eligible", "Not Eligible", "Need Additional Documents", "Auth Applied", "Auth Approved", "Shipped", "Delivered", "Pre Payment Request", "Post Payment Request", "Denied", "Billed", "Completed", "Need To Bill", "PrePay Audit", "Appeal", "Paid", "PostPay Audit"].includes(l.status)).length },
                   { key: "authorization" as const, label: "Authorization", count: leads.filter(l => ["Auth Applied", "Auth Approved"].includes(l.status)).length },
                   { key: "prepay" as const, label: "Pre Payment Cases", count: leads.filter(l => l.status === "Pre Payment Request").length },
                   { key: "shipment" as const, label: "Shipment", count: leads.filter(l => ["Shipped", "Delivered"].includes(l.status)).length },
-                  { key: "postpay" as const, label: "Post Payment Cases", count: leads.filter(l => l.status === "Post Payment Request").length },
+                  { key: "needtobill" as const, label: "Need To Bill Cases", count: leads.filter(l => l.status === "Need To Bill").length },
                   { key: "billed" as const, label: "Billed Cases", count: leads.filter(l => l.status === "Billed").length },
+                  { key: "prepayaudit" as const, label: "PrePay Audit Cases", count: leads.filter(l => l.status === "PrePay Audit").length },
+                  { key: "appeal" as const, label: "Appeal Cases", count: leads.filter(l => l.status === "Appeal").length },
+                  { key: "paid" as const, label: "Paid Cases", count: leads.filter(l => l.status === "Paid").length },
                   { key: "denied" as const, label: "Denied Cases", count: leads.filter(l => l.status === "Denied").length },
+                  { key: "postpayaudit" as const, label: "PostPay Audit Cases", count: leads.filter(l => l.status === "PostPay Audit").length },
+                  { key: "postpay" as const, label: "Post Payment Cases", count: leads.filter(l => l.status === "Post Payment Request").length },
                   { key: "completed" as const, label: "Completed Cases", count: leads.filter(l => l.status === "Completed").length },
                 ]).map((tab) => (
                   <button
