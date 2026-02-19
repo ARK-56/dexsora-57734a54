@@ -534,40 +534,51 @@ const AdminPanel = () => {
 
             {/* Right: Case category tabs */}
             <div className="hidden lg:block">
-              <div className="sticky top-6 space-y-2">
-              {([
-                  { key: "all" as const, label: "New Patient", count: leads.filter(l => l.status === "New Lead").length },
-                  { key: "eligibility" as const, label: "Pending", count: leads.filter(l => l.status === "Pending").length },
-                  { key: "needadditionaldocs" as const, label: "Need Additional Documents", count: leads.filter(l => l.status === "Need Additional Documents").length },
-                  { key: "eligible" as const, label: "Eligible", count: leads.filter(l => l.status === "Eligible").length },
-                  { key: "shipment" as const, label: "Shipped", count: leads.filter(l => l.status === "Shipped").length },
-                  { key: "delivered" as const, label: "Delivered", count: leads.filter(l => l.status === "Delivered").length },
-                  { key: "needtobill" as const, label: "Need To Bill Cases", count: leads.filter(l => l.status === "Need To Bill").length },
-                  { key: "billed" as const, label: "Billed Cases", count: leads.filter(l => l.status === "Billed").length },
-                  { key: "prepayaudit" as const, label: "PrePay Audit Cases", count: leads.filter(l => l.status === "PrePay Audit").length },
-                  { key: "appeal" as const, label: "Appeal Cases", count: leads.filter(l => l.status === "Appeal").length },
-                  { key: "paid" as const, label: "Paid Cases", count: leads.filter(l => l.status === "Paid").length },
-                  { key: "denied" as const, label: "Denied Cases", count: leads.filter(l => l.status === "Denied").length },
-                  { key: "postpayaudit" as const, label: "PostPay Audit Cases", count: leads.filter(l => l.status === "PostPay Audit").length },
-                  { key: "noteligible" as const, label: "Not Eligible", count: leads.filter(l => l.status === "Not Eligible").length },
-                ]).map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setLeadsSubTab(tab.key)}
-                    className={`w-full flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
-                      leadsSubTab === tab.key
-                        ? "swoosh-gradient text-white shadow-md"
-                        : "border border-border bg-card text-muted-foreground hover:bg-muted hover:border-primary/30"
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                      leadsSubTab === tab.key ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                    }`}>
-                      {tab.count}
-                    </span>
-                  </button>
-                ))}
+              <div className="sticky top-6">
+                <div className="rounded-2xl border border-border/50 bg-card shadow-sm overflow-hidden">
+                  <div className="swoosh-gradient px-4 py-2.5">
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-white/80">Filter by Status</h3>
+                  </div>
+                  <div className="p-2 space-y-0.5">
+                    {([
+                      { key: "all" as const, label: "New Patient", count: leads.filter(l => l.status === "New Lead").length },
+                      { key: "eligibility" as const, label: "Pending", count: leads.filter(l => l.status === "Pending").length },
+                      { key: "needadditionaldocs" as const, label: "Need Additional Documents", count: leads.filter(l => l.status === "Need Additional Documents").length },
+                      { key: "eligible" as const, label: "Eligible", count: leads.filter(l => l.status === "Eligible").length },
+                      { key: "shipment" as const, label: "Shipped", count: leads.filter(l => l.status === "Shipped").length },
+                      { key: "delivered" as const, label: "Delivered", count: leads.filter(l => l.status === "Delivered").length },
+                      { key: "needtobill" as const, label: "Need To Bill Cases", count: leads.filter(l => l.status === "Need To Bill").length },
+                      { key: "billed" as const, label: "Billed Cases", count: leads.filter(l => l.status === "Billed").length },
+                      { key: "prepayaudit" as const, label: "PrePay Audit Cases", count: leads.filter(l => l.status === "PrePay Audit").length },
+                      { key: "appeal" as const, label: "Appeal Cases", count: leads.filter(l => l.status === "Appeal").length },
+                      { key: "paid" as const, label: "Paid Cases", count: leads.filter(l => l.status === "Paid").length },
+                      { key: "denied" as const, label: "Denied Cases", count: leads.filter(l => l.status === "Denied").length },
+                      { key: "postpayaudit" as const, label: "PostPay Audit Cases", count: leads.filter(l => l.status === "PostPay Audit").length },
+                      { key: "noteligible" as const, label: "Not Eligible", count: leads.filter(l => l.status === "Not Eligible").length },
+                    ]).map((tab) => {
+                      const isActive = leadsSubTab === tab.key;
+                      return (
+                        <button
+                          key={tab.key}
+                          onClick={() => setLeadsSubTab(tab.key)}
+                          className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-sm transition-all ${
+                            isActive ? "bg-primary/10 font-semibold text-foreground" : "text-foreground/70 hover:bg-muted font-medium"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <div className={`h-2 w-2 rounded-full ${isActive ? "bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.5)]" : "bg-muted-foreground/25"}`} />
+                            {tab.label}
+                          </span>
+                          <span className={`min-w-[22px] text-center text-xs font-bold rounded-full px-1.5 py-0.5 ${
+                            isActive ? "bg-primary/15 text-primary" : tab.count > 0 ? "bg-muted text-muted-foreground" : "text-muted-foreground/40"
+                          }`}>
+                            {tab.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
