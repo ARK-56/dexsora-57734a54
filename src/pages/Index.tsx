@@ -40,8 +40,17 @@ const Index = () => {
 
   const currentRole = roles[0] || "doctor";
 
+  // Statuses visible to doctors; anything else maps to "Delivered"
+  const DOCTOR_VISIBLE_STATUSES = ["New Lead", "Pending", "Eligible", "Not Eligible", "Need Additional Documents", "Shipped", "Delivered"];
+
+  const getDoctorStatus = (status: string): string => {
+    if (DOCTOR_VISIBLE_STATUSES.includes(status)) return status;
+    return "Delivered";
+  };
+
   const filteredLeads = leads.filter((l) => {
-    const matchesStatus = statusFilter === "All" || l.status === statusFilter;
+    const displayStatus = getDoctorStatus(l.status);
+    const matchesStatus = statusFilter === "All" || displayStatus === statusFilter;
     const matchesSearch = !searchQuery || l.patient_name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
@@ -105,7 +114,7 @@ const Index = () => {
 
   const getCountForStatus = (status: LeadStatus | "All") => {
     if (status === "All") return leads.length;
-    return leads.filter((l) => l.status === status).length;
+    return leads.filter((l) => getDoctorStatus(l.status) === status).length;
   };
 
   return (
