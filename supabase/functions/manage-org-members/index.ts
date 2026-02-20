@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
       if (!VALID_ORG_ROLES.includes(role)) throw new Error("Invalid role");
       if (npi && !isValidNPI(npi)) throw new Error("NPI must be exactly 10 digits");
 
-      // Verify caller is org admin or owner
+      // Verify caller is org admin/owner OR a logistics (marketing) member
       const { data: isOwner } = await supabaseAdmin.rpc("is_org_owner", {
         _user_id: caller.id,
         _organization_id: organizationId,
@@ -108,7 +108,23 @@ Deno.serve(async (req) => {
         _user_id: caller.id,
         _organization_id: organizationId,
       });
-      if (!isOwner && !isOrgAdmin) throw new Error("Only org admins can invite members");
+
+      // Check if caller is a logistics (marketing) member of this org
+      const { data: callerMembership } = await supabaseAdmin
+        .from("org_members")
+        .select("role")
+        .eq("user_id", caller.id)
+        .eq("organization_id", organizationId)
+        .maybeSingle();
+
+      const isLogisticsMember = callerMembership?.role === "logistics";
+
+      if (!isOwner && !isOrgAdmin && !isLogisticsMember) throw new Error("Only org admins can invite members");
+
+      // Logistics (marketing) members can ONLY invite doctor role
+      if (isLogisticsMember && !isOwner && !isOrgAdmin && role !== "doctor") {
+        throw new Error("Marketing members can only invite Doctor/Facility members");
+      }
 
       // Get org name
       const { data: org } = await supabaseAdmin
@@ -269,6 +285,7 @@ Deno.serve(async (req) => {
     if (msg.includes("missing")) safeMessage = error.message;
     else if (msg.includes("invalid")) safeMessage = error.message;
     else if (msg.includes("only org")) safeMessage = error.message;
+    else if (msg.includes("marketing members")) safeMessage = error.message;
     else if (msg.includes("already")) safeMessage = error.message;
     else if (msg.includes("cannot")) safeMessage = error.message;
     else if (msg.includes("not a member")) safeMessage = error.message;
