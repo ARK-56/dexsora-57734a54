@@ -336,7 +336,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                 {/* Insurance dropdown */}
                 <div className="col-span-2">
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                    Insurance
+                    Insurance <span className="text-destructive">*</span>
                   </label>
                   <div className="relative">
                     <button
@@ -345,7 +345,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                       className="flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
                     >
                       <span className={form.insurance ? "text-foreground" : "text-muted-foreground/60"}>
-                        {form.insurance || "Select insurance (optional)"}
+                        {form.insurance || "Select insurance"}
                       </span>
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     </button>
@@ -353,15 +353,6 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setInsuranceDropdownOpen(false)} />
                         <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
-                          {form.insurance && (
-                            <button
-                              type="button"
-                              onClick={() => { setForm((p) => ({ ...p, insurance: "" })); setInsuranceDropdownOpen(false); }}
-                              className="w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted transition-colors italic"
-                            >
-                              Clear selection
-                            </button>
-                          )}
                           {orgInsurances.length === 0 ? (
                             <div className="px-3 py-4 text-xs text-muted-foreground text-center italic">
                               No insurances configured by your admin
@@ -387,6 +378,8 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                       </>
                     )}
                   </div>
+                  {/* Hidden required input for form validation */}
+                  <input type="text" value={form.insurance} required className="sr-only" tabIndex={-1} onChange={() => {}} />
                 </div>
               </div>
             </div>
