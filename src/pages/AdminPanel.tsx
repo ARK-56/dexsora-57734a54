@@ -594,9 +594,9 @@ const AdminPanel = () => {
                                         onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value)}
                                         className="h-8 rounded-lg border border-input bg-background px-2 text-xs text-foreground outline-none focus:border-primary"
                                       >
-                                        <option value={lead.status}>{lead.status}</option>
+                                        <option value={lead.status}>{STATUS_LABELS[lead.status] ?? lead.status}</option>
                                         {availStatuses.filter(s => s !== lead.status).map((s) => (
-                                          <option key={s} value={s}>{s}</option>
+                                          <option key={s} value={s}>{STATUS_LABELS[s] ?? s}</option>
                                         ))}
                                       </select>
                                     ) : (
