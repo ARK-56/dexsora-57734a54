@@ -270,6 +270,7 @@ const Index = () => {
         count={selectedIds.length}
         onSoftDelete={handleSoftDelete}
         onPermanentDelete={handlePermanentDelete}
+        canPermanentDelete={false}
       />
     </div>
   );

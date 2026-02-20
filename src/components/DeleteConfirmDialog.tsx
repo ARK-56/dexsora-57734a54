@@ -15,7 +15,8 @@ interface DeleteConfirmDialogProps {
   onOpenChange: (open: boolean) => void;
   count: number;
   onSoftDelete: () => void;
-  onPermanentDelete: () => void;
+  onPermanentDelete?: () => void;
+  canPermanentDelete?: boolean;
 }
 
 export const DeleteConfirmDialog = ({
@@ -24,6 +25,7 @@ export const DeleteConfirmDialog = ({
   count,
   onSoftDelete,
   onPermanentDelete,
+  canPermanentDelete = true,
 }: DeleteConfirmDialogProps) => {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -31,8 +33,9 @@ export const DeleteConfirmDialog = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {count} lead{count > 1 ? "s" : ""}?</AlertDialogTitle>
           <AlertDialogDescription>
-            Choose how you want to remove the selected lead{count > 1 ? "s" : ""}. 
-            Moving to trash allows recovery later, while permanent deletion cannot be undone.
+            {canPermanentDelete
+              ? `Choose how you want to remove the selected lead${count > 1 ? "s" : ""}. Moving to trash allows recovery later, while permanent deletion cannot be undone.`
+              : `The selected lead${count > 1 ? "s" : ""} will be moved to trash. Trashed leads are automatically removed after 60 days.`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -44,13 +47,15 @@ export const DeleteConfirmDialog = ({
             <ArchiveX className="h-4 w-4 mr-1.5" />
             Move to Trash
           </AlertDialogAction>
-          <AlertDialogAction
-            onClick={onPermanentDelete}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            <Trash2 className="h-4 w-4 mr-1.5" />
-            Delete Permanently
-          </AlertDialogAction>
+          {canPermanentDelete && onPermanentDelete && (
+            <AlertDialogAction
+              onClick={onPermanentDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" />
+              Delete Permanently
+            </AlertDialogAction>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

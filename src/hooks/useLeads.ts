@@ -50,9 +50,14 @@ export const useLeads = () => {
   const fetchLeads = useCallback(async () => {
     if (!user) return;
 
-    // Auto-update stale leads
+    // Auto-update stale leads & cleanup old trashed leads
     try {
       await supabase.rpc("auto_update_stale_leads");
+    } catch (e) {
+      // Ignore if function doesn't exist or fails
+    }
+    try {
+      await supabase.rpc("cleanup_old_trashed_leads");
     } catch (e) {
       // Ignore if function doesn't exist or fails
     }
