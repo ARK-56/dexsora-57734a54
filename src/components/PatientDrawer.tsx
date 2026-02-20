@@ -69,6 +69,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
   const [notes, setNotes] = useState<LeadNote[]>([]);
   const [uploading, setUploading] = useState(false);
   const [localDocs, setLocalDocs] = useState(lead?.documents ?? []);
+  const [ipLocation, setIpLocation] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const adminFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -86,6 +87,25 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
     }
     query.then(({ data }) => setNotes(data || []));
   }, [lead?.id, isEffectiveAdmin]);
+
+  // Fetch IP geolocation for admin users only
+  useEffect(() => {
+    if (!isEffectiveAdmin || !lead?.submitted_ip || lead.submitted_ip === "unknown") {
+      setIpLocation(null);
+      return;
+    }
+    setIpLocation(null);
+    fetch(`https://ipapi.co/${lead.submitted_ip}/json/`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.city && data.country_name) {
+          setIpLocation(`${data.city}, ${data.country_name}`);
+        } else if (data && data.country_name) {
+          setIpLocation(data.country_name);
+        }
+      })
+      .catch(() => setIpLocation(null));
+  }, [lead?.submitted_ip, isEffectiveAdmin]);
 
   if (!lead) return null;
 
@@ -217,7 +237,12 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
               {lead.doctor_name && <InfoRow icon={<User className="h-4 w-4" />} label="Doctor" value={lead.doctor_name} />}
               {lead.doctor_npi && <InfoRow icon={<Shield className="h-4 w-4" />} label="NPI" value={lead.doctor_npi} />}
               {isEffectiveAdmin && lead.submitted_ip && (
-                <InfoRow icon={<Shield className="h-4 w-4" />} label="Submitted IP" value={lead.submitted_ip} />
+                <>
+                  <InfoRow icon={<Shield className="h-4 w-4" />} label="Submitted IP" value={lead.submitted_ip} />
+                  {ipLocation && (
+                    <InfoRow icon={<MapPin className="h-4 w-4" />} label="Location" value={ipLocation} />
+                  )}
+                </>
               )}
             </Section>
           )}
