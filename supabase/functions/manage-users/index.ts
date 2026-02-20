@@ -261,9 +261,6 @@ Deno.serve(async (req) => {
 
       const { data: userProfile } = await supabaseAdmin.from("profiles").select("full_name, email").eq("user_id", userId).single();
 
-      // Invalidate all active sessions before deleting
-      await supabaseAdmin.auth.admin.signOut(userId, "others");
-
       await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
       await supabaseAdmin.from("profiles").delete().eq("user_id", userId);
       const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
