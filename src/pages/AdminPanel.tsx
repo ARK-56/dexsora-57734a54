@@ -39,6 +39,23 @@ const ALL_STATUSES: LeadStatus[] = [
   "Need To Bill", "Billed", "PrePay Audit", "Appeal", "Paid", "Denied", "PostPay Audit", "Not Eligible",
 ];
 
+const STATUS_LABELS: Record<string, string> = {
+  "New Lead": "New Patient",
+  "Pending": "Pending",
+  "Need Additional Documents": "Need Additional Documents",
+  "Eligible": "Eligible",
+  "Shipped": "Shipped",
+  "Delivered": "Delivered",
+  "Need To Bill": "Need To Bill Cases",
+  "Billed": "Billed Cases",
+  "PrePay Audit": "PrePay Audit Cases",
+  "Appeal": "Appeal Cases",
+  "Paid": "Paid Cases",
+  "Denied": "Denied Cases",
+  "PostPay Audit": "PostPay Audit Cases",
+  "Not Eligible": "Not Eligible",
+};
+
 const getAvailableStatuses = (currentStatus: string, roles: string[], isOrgOwnerOrAdmin: boolean): LeadStatus[] => {
   const isAdmin = roles.includes("admin") || isOrgOwnerOrAdmin;
   if (isAdmin) return ALL_STATUSES;
@@ -459,7 +476,7 @@ const AdminPanel = () => {
                     >
                       <option value="">Set status...</option>
                       {ALL_STATUSES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                        <option key={s} value={s}>{STATUS_LABELS[s] ?? s}</option>
                       ))}
                     </select>
                     <button
