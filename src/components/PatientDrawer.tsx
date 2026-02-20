@@ -79,9 +79,13 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
 
   useEffect(() => {
     if (!lead) return;
-    supabase.from("lead_notes").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false })
-      .then(({ data }) => setNotes(data || []));
-  }, [lead?.id]);
+    let query = supabase.from("lead_notes").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false });
+    // Non-admins (doctors) should only see non-internal notes
+    if (!isEffectiveAdmin) {
+      query = query.eq("is_internal", false);
+    }
+    query.then(({ data }) => setNotes(data || []));
+  }, [lead?.id, isEffectiveAdmin]);
 
   if (!lead) return null;
 
