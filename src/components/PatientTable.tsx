@@ -133,6 +133,9 @@ const NotesIconButton = ({ leadId, patientName }: { leadId: string; patientName:
 export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect, onToggleAll, allSelected }: PatientTableProps) => {
   const [page, setPage] = useState(0);
   const { hasAdminAccess } = useAuth();
+  // For non-admins, only count public (non-admin-only) documents
+  const visibleDocCount = (lead: DbLead) =>
+    hasAdminAccess ? lead.documents.length : lead.documents.filter((d) => !d.is_admin_only).length;
   const totalPages = Math.max(1, Math.ceil(leads.length / PAGE_SIZE));
   const safeePage = Math.min(page, totalPages - 1);
   const pagedLeads = leads.slice(safeePage * PAGE_SIZE, (safeePage + 1) * PAGE_SIZE);
@@ -221,9 +224,9 @@ export const PatientTable = ({ leads, onSelectLead, selectedIds, onToggleSelect,
                     {lead.item || lead.dme_items || "—"}
                   </td>
                   <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap text-xs">
-                    {lead.documents.length > 0 ? (
+                    {visibleDocCount(lead) > 0 ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-primary font-medium">
-                        {lead.documents.length} file{lead.documents.length > 1 ? "s" : ""}
+                        {visibleDocCount(lead)} file{visibleDocCount(lead) > 1 ? "s" : ""}
                       </span>
                     ) : "—"}
                   </td>
