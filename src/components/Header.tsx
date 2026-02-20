@@ -92,7 +92,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
             title="Trash">
             <Trash2 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Trash</span>
-            {trashCount > 0 &&
+            {trashCount > 0 && (hasAdminAccess || isOrgOwner || isOrgAdmin) &&
             <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
                 {trashCount}
               </span>
