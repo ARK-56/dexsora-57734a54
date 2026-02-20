@@ -91,12 +91,14 @@ const Trash = () => {
           </div>
           {selectedIds.length > 0 && (
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleRestore}
-                className="flex items-center gap-1.5 rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-              >
-                <RotateCcw className="h-4 w-4" /> Restore ({selectedIds.length})
-              </button>
+              {isEffectiveAdmin && (
+                <button
+                  onClick={handleRestore}
+                  className="flex items-center gap-1.5 rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                  <RotateCcw className="h-4 w-4" /> Restore ({selectedIds.length})
+                </button>
+              )}
               {isEffectiveAdmin && (
                 <button
                   onClick={() => setDeleteDialogOpen(true)}
@@ -114,7 +116,7 @@ const Trash = () => {
           <Info className="h-4 w-4 mt-0.5 shrink-0" />
           <span>
             Items in trash are automatically and permanently deleted after <strong>60 days</strong>.
-            {isEffectiveAdmin ? " Admins can permanently delete earlier." : " You can restore them at any time before then."}
+            {isEffectiveAdmin ? " Admins can restore or permanently delete earlier." : ""}
           </span>
         </div>
 
