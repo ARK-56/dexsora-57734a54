@@ -151,10 +151,12 @@ const OrgSettings = () => {
       <main className="mx-auto max-w-[900px] px-4 py-6 lg:px-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-            <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
-              <ArrowLeft className="h-4 w-4 text-muted-foreground" />
-            </Link>
+          <div className="flex items-center gap-3">
+            {!isMarketingRole && (
+              <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
+                <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            )}
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground">Organization Settings</h1>
               <p className="text-sm text-muted-foreground">Manage {currentOrg.name}</p>

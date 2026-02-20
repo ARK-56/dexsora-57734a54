@@ -17,8 +17,9 @@ interface HeaderProps {
 }
 
 export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }: HeaderProps) => {
-  const { user, profile, hasAdminAccess, isDoctor, isSuperAdmin, signOut } = useAuth();
+  const { user, profile, hasAdminAccess, isDoctor, isSuperAdmin, roles, signOut } = useAuth();
   const isSuperAdminOnly = isSuperAdmin;
+  const isMarketingRole = roles.includes("logistics");
   const { isOrgOwner, isOrgAdmin } = useOrg();
   const [trashCount, setTrashCount] = useState(0);
   const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState<string | null>(null);
@@ -73,8 +74,8 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
         </Link>
 
         <div className="flex items-center gap-3">
-          {!isSuperAdminOnly && <OrgSwitcher />}
-          {!isSuperAdminOnly && <div className="relative hidden md:block">
+          {!isSuperAdminOnly && !isMarketingRole && <OrgSwitcher />}
+          {!isSuperAdminOnly && !isMarketingRole && <div className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
             <input
               type="text"
@@ -82,15 +83,13 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
               value={searchQuery}
               onChange={(e) => onSearchChange?.(e.target.value)}
               className="h-9 w-64 rounded-lg border border-white/20 bg-white/10 pl-9 pr-4 text-sm text-white placeholder:text-white/50 outline-none transition-colors focus:border-white/40 focus:ring-1 focus:ring-white/30" />
-
           </div>}
 
-          {!isSuperAdminOnly &&
+          {!isSuperAdminOnly && !isMarketingRole &&
           <Link
             to="/trash"
             className="relative flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20"
             title="Trash">
-
             <Trash2 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Trash</span>
             {trashCount > 0 &&
@@ -100,7 +99,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
             }
           </Link>}
 
-          {!isSuperAdminOnly && (isOrgOwner || isOrgAdmin) &&
+          {!isSuperAdminOnly && !isMarketingRole && (isOrgOwner || isOrgAdmin) &&
           <Link
             to="/org-settings"
             className="flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20">
@@ -109,7 +108,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
             </Link>
           }
 
-          {!isSuperAdminOnly && hasAdminAccess &&
+          {!isSuperAdminOnly && !isMarketingRole && hasAdminAccess &&
           <Link
             to="/admin"
             className="flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20">
@@ -127,18 +126,16 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
             </Link>
           }
 
-          {!isSuperAdminOnly && <ThemeToggle />}
-          {!isSuperAdminOnly && <NotificationPopup onNotificationClick={onNotificationClick} />}
+          {!isSuperAdminOnly && !isMarketingRole && <ThemeToggle />}
+          {!isSuperAdminOnly && !isMarketingRole && <NotificationPopup onNotificationClick={onNotificationClick} />}
 
-          {!isSuperAdminOnly &&
+          {!isSuperAdminOnly && !isMarketingRole &&
           <Link
             to="/profile"
             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white overflow-hidden border border-white/30"
             title="My Profile">
-
             {resolvedAvatarUrl ?
             <img src={resolvedAvatarUrl} alt="Avatar" className="h-full w-full object-cover" /> :
-
             initials
             }
           </Link>}
@@ -147,7 +144,6 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
             onClick={signOut}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10 transition-colors hover:bg-white/20"
             title="Sign out">
-
             <LogOut className="h-4 w-4 text-white/90" />
           </button>
         </div>
