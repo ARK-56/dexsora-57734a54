@@ -18,15 +18,25 @@ interface OrgMember {
 }
 
 const INVITE_ROLES = [
-  { value: "doctor", label: "Doctor" },
-  { value: "eligibility", label: "Eligibility" },
-  { value: "auth_team", label: "Auth Team" },
-  { value: "shipment", label: "Shipment" },
-  { value: "billing", label: "Billing" },
+  { value: "doctor", label: "Doctor/Facility" },
+  { value: "eligibility", label: "Eligibility and Auth Team" },
+  { value: "billing", label: "Billing Department" },
+  { value: "shipment", label: "Shipment Department" },
+  { value: "logistics", label: "Marketing Department" },
 ];
 
-const formatRole = (role: string) =>
-  role.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+const ROLE_LABELS: Record<string, string> = {
+  doctor: "Doctor/Facility",
+  eligibility: "Eligibility and Auth Team",
+  auth_team: "Eligibility and Auth Team",
+  billing: "Billing Department",
+  shipment: "Shipment Department",
+  logistics: "Marketing Department",
+  admin: "Admin",
+  super_admin: "Super Admin",
+};
+
+const formatRole = (role: string) => ROLE_LABELS[role] ?? role.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
 const OrgSettings = () => {
   const { user, loading: authLoading, isSuperAdmin, hasAdminAccess, isDoctor } = useAuth();
