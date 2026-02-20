@@ -81,9 +81,9 @@ const Pricing = () => {
             <Button
               variant="ghost"
               className="text-white/80 hover:text-white hover:bg-white/10"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/onboarding")}
             >
-              Dashboard
+              Skip for now
             </Button>
           ) : (
             <Button
