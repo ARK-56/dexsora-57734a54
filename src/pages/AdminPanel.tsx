@@ -77,6 +77,8 @@ const AdminPanel = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"users" | "leads" | "chat">("leads");
   const [leadsSubTab, setLeadsSubTab] = useState<"all" | "eligibility" | "needadditionaldocs" | "eligible" | "shipment" | "delivered" | "denied" | "billed" | "needtobill" | "prepayaudit" | "appeal" | "paid" | "postpayaudit" | "noteligible">("all");
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState<string>("");
   const [noteModal, setNoteModal] = useState<{ leadId: string; patientName: string } | null>(null);
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
@@ -281,7 +283,13 @@ const AdminPanel = () => {
     await updateLeadStatus(leadId, newStatus);
   };
 
-  
+  const handleBulkStatusUpdate = async () => {
+    if (!bulkStatus || selectedLeadIds.length === 0) return;
+    await Promise.all(selectedLeadIds.map((id) => updateLeadStatus(id, bulkStatus)));
+    toast({ title: "Bulk update complete", description: `${selectedLeadIds.length} lead(s) updated to "${bulkStatus}".` });
+    setSelectedLeadIds([]);
+    setBulkStatus("");
+  };
 
   const handleAddNote = async () => {
     if (!noteModal || !noteText.trim()) return;
@@ -439,6 +447,39 @@ const AdminPanel = () => {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
             {/* Left: All Leads table */}
             <div className="space-y-4 min-w-0">
+              {/* Bulk action bar */}
+              {selectedLeadIds.length > 0 && (
+                <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
+                  <span className="text-sm font-semibold text-foreground">{selectedLeadIds.length} selected</span>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <select
+                      value={bulkStatus}
+                      onChange={(e) => setBulkStatus(e.target.value)}
+                      className="h-8 rounded-lg border border-input bg-background px-2 text-xs text-foreground outline-none focus:border-primary"
+                    >
+                      <option value="">Set status...</option>
+                      {ALL_STATUSES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleBulkStatusUpdate}
+                      disabled={!bulkStatus}
+                      className="h-8 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none"
+                    >
+                      Apply
+                    </button>
+                    <button
+                      onClick={() => { setSelectedLeadIds([]); setBulkStatus(""); }}
+                      className="h-8 w-8 flex items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors text-muted-foreground"
+                      title="Clear selection"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="overflow-hidden rounded-xl border border-border bg-card">
                 {leadsLoading ? (
                   <div className="flex items-center justify-center py-12">
@@ -460,6 +501,8 @@ const AdminPanel = () => {
                     : leadsSubTab === "noteligible" ? leads.filter(l => l.status === "Not Eligible")
                     : leads.filter(l => l.status === "Billed");
 
+                  const allChecked = filteredLeads.length > 0 && filteredLeads.every(l => selectedLeadIds.includes(l.id));
+
                   return filteredLeads.length === 0 ? (
                     <div className="py-12 text-center text-muted-foreground">No leads in this category.</div>
                   ) : (
@@ -467,6 +510,20 @@ const AdminPanel = () => {
                       <table className="w-full border-collapse text-sm">
                         <thead>
                           <tr className="swoosh-gradient">
+                            <th className="w-10 px-3 py-3 text-center">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 accent-primary rounded"
+                                checked={allChecked}
+                                onChange={() => {
+                                  if (allChecked) {
+                                    setSelectedLeadIds(prev => prev.filter(id => !filteredLeads.some(l => l.id === id)));
+                                  } else {
+                                    setSelectedLeadIds(prev => [...new Set([...prev, ...filteredLeads.map(l => l.id)])]);
+                                  }
+                                }}
+                              />
+                            </th>
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Patient</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Doctor</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Status</th>
@@ -479,8 +536,22 @@ const AdminPanel = () => {
                         <tbody>
                           {filteredLeads.map((lead, idx) => {
                             const availStatuses = availableStatusesForRole(lead.status);
+                            const isChecked = selectedLeadIds.includes(lead.id);
                             return (
-                              <tr key={lead.id} className={`border-b border-border transition-colors hover:bg-muted/30 ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
+                              <tr
+                                key={lead.id}
+                                className={`border-b border-border transition-colors hover:bg-muted/30 ${idx % 2 === 1 ? "bg-muted/10" : ""} ${isChecked ? "!bg-primary/10 ring-1 ring-inset ring-primary/20" : ""}`}
+                              >
+                                <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 accent-primary rounded"
+                                    checked={isChecked}
+                                    onChange={() => setSelectedLeadIds(prev =>
+                                      prev.includes(lead.id) ? prev.filter(id => id !== lead.id) : [...prev, lead.id]
+                                    )}
+                                  />
+                                </td>
                                 <td className="px-4 py-3 cursor-pointer" onClick={() => setSelectedLead(lead)}>
                                   <p className="text-sm font-semibold text-primary hover:underline">{lead.patient_name}</p>
                                 </td>
@@ -535,6 +606,7 @@ const AdminPanel = () => {
                 })()}
               </div>
             </div>
+
 
             {/* Right: Case category tabs */}
             <div className="hidden lg:block">
