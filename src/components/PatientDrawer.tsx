@@ -35,7 +35,7 @@ const getAvailableStatuses = (currentStatus: string, roles: string[], isAdminUse
   const isAdmin = roles.includes("admin") || isAdminUser;
   if (isAdmin) return ALL_STATUSES;
 
-  const isEligibility = roles.includes("eligibility");
+  const isEligibility = roles.includes("eligibility") || roles.includes("auth_team");
   const isShipment = roles.includes("shipment");
   const isBilling = roles.includes("billing");
 
