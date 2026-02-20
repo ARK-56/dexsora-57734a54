@@ -303,6 +303,7 @@ export type Database = {
           doctor_npi: string | null
           email: string | null
           id: string
+          insurance: string | null
           item: string | null
           medicare_id: string
           organization_id: string | null
@@ -327,6 +328,7 @@ export type Database = {
           doctor_npi?: string | null
           email?: string | null
           id?: string
+          insurance?: string | null
           item?: string | null
           medicare_id: string
           organization_id?: string | null
@@ -351,6 +353,7 @@ export type Database = {
           doctor_npi?: string | null
           email?: string | null
           id?: string
+          insurance?: string | null
           item?: string | null
           medicare_id?: string
           organization_id?: string | null
@@ -431,6 +434,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_insurances: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_insurances_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
