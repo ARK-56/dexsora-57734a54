@@ -36,6 +36,7 @@ export const OrgProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchOrgs = useCallback(async () => {
+    setLoading(true);
     if (!user) {
       setOrganizations([]);
       setCurrentOrgId(null);
