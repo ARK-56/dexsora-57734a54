@@ -216,6 +216,9 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
             <Section title="Doctor Information">
               {lead.doctor_name && <InfoRow icon={<User className="h-4 w-4" />} label="Doctor" value={lead.doctor_name} />}
               {lead.doctor_npi && <InfoRow icon={<Shield className="h-4 w-4" />} label="NPI" value={lead.doctor_npi} />}
+              {isEffectiveAdmin && lead.submitted_ip && (
+                <InfoRow icon={<Shield className="h-4 w-4" />} label="Submitted IP" value={lead.submitted_ip} />
+              )}
             </Section>
           )}
 
