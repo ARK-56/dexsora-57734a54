@@ -39,8 +39,9 @@ const ROLE_LABELS: Record<string, string> = {
 const formatRole = (role: string) => ROLE_LABELS[role] ?? role.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
 const OrgSettings = () => {
-  const { user, loading: authLoading, isSuperAdmin, hasAdminAccess, isDoctor } = useAuth();
+  const { user, loading: authLoading, isSuperAdmin, roles } = useAuth();
   const { currentOrg, isOrgOwner, isOrgAdmin, loading: orgLoading } = useOrg();
+  const isMarketingRole = roles.includes("logistics");
   const { toast } = useToast();
 
   const [members, setMembers] = useState<OrgMember[]>([]);
@@ -98,7 +99,8 @@ const OrgSettings = () => {
   if (!user) return <Navigate to="/login" replace />;
   if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
   if (!currentOrg) return <Navigate to="/" replace />;
-  if (!isOrgOwner && !isOrgAdmin) return <Navigate to="/" replace />;
+  // Marketing role (logistics) has limited access to org-settings; all others need admin/owner
+  if (!isOrgOwner && !isOrgAdmin && !isMarketingRole) return <Navigate to="/" replace />;
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,7 +151,7 @@ const OrgSettings = () => {
       <main className="mx-auto max-w-[900px] px-4 py-6 lg:px-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
             <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
               <ArrowLeft className="h-4 w-4 text-muted-foreground" />
             </Link>
@@ -158,7 +160,7 @@ const OrgSettings = () => {
               <p className="text-sm text-muted-foreground">Manage {currentOrg.name}</p>
             </div>
           </div>
-          {(isOrgOwner || isOrgAdmin) && (
+          {(isOrgOwner || isOrgAdmin || isMarketingRole) && (
             <button
               onClick={() => setShowInvite(true)}
               className="flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
@@ -189,11 +191,11 @@ const OrgSettings = () => {
           </div>
         </div>
 
-        {/* Items Management */}
-        <OrgItemsManager orgId={currentOrg.id} />
+        {/* Items Management - hidden for marketing role */}
+        {!isMarketingRole && <OrgItemsManager orgId={currentOrg.id} />}
 
-        {/* Insurance Management */}
-        <OrgInsurancesManager orgId={currentOrg.id} />
+        {/* Insurance Management - hidden for marketing role */}
+        {!isMarketingRole && <OrgInsurancesManager orgId={currentOrg.id} />}
 
         {/* Members Table */}
         <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -296,11 +298,18 @@ const OrgSettings = () => {
                     value={inviteForm.role}
                     onChange={(e) => setInviteForm((p) => ({ ...p, role: e.target.value }))}
                     className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
+                    disabled={isMarketingRole}
                   >
-                    {INVITE_ROLES.map((r) => (
+                    {(isMarketingRole
+                      ? INVITE_ROLES.filter((r) => r.value === "doctor")
+                      : INVITE_ROLES
+                    ).map((r) => (
                       <option key={r.value} value={r.value}>{r.label}</option>
                     ))}
                   </select>
+                  {isMarketingRole && (
+                    <p className="mt-1 text-xs text-muted-foreground">Marketing members can only invite Doctor/Facility members.</p>
+                  )}
                 </div>
                 {inviteForm.role === "doctor" && (
                   <div>
