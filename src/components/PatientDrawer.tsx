@@ -70,6 +70,10 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
   useEffect(() => {
     if (!lead) return;
     setLocalDocs(lead.documents);
+  }, [lead?.documents]);
+
+  useEffect(() => {
+    if (!lead) return;
     supabase.from("lead_notes").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false })
       .then(({ data }) => setNotes(data || []));
   }, [lead?.id]);
