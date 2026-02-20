@@ -26,6 +26,7 @@ export interface DbLead {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  submitted_ip: string | null;
   documents: DbLeadDocument[];
 }
 
@@ -130,6 +131,15 @@ export const useLeads = () => {
   }) => {
     if (!user) return;
 
+    // Fetch the submitter's real IP via edge function
+    let submittedIp: string | null = null;
+    try {
+      const ipRes = await supabase.functions.invoke("get-client-ip");
+      submittedIp = ipRes.data?.ip ?? null;
+    } catch {
+      // Non-critical — continue without IP
+    }
+
     const { data: newLead, error } = await supabase
       .from("leads")
       .insert({
@@ -144,6 +154,7 @@ export const useLeads = () => {
         doctor_npi: profile?.npi || "",
         submitted_by: user.id,
         organization_id: currentOrg?.id || null,
+        submitted_ip: submittedIp,
       } as any)
       .select()
       .single();

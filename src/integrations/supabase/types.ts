@@ -311,6 +311,7 @@ export type Database = {
           ppo_id: string | null
           status: string
           submitted_by: string | null
+          submitted_ip: string | null
           tracking_number: string | null
           updated_at: string
         }
@@ -334,6 +335,7 @@ export type Database = {
           ppo_id?: string | null
           status?: string
           submitted_by?: string | null
+          submitted_ip?: string | null
           tracking_number?: string | null
           updated_at?: string
         }
@@ -357,6 +359,7 @@ export type Database = {
           ppo_id?: string | null
           status?: string
           submitted_by?: string | null
+          submitted_ip?: string | null
           tracking_number?: string | null
           updated_at?: string
         }
