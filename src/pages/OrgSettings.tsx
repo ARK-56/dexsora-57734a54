@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, UserPlus, Building2, Trash2, X, Stethoscope, Users, Plus, Package } from "lucide-react";
+import { ArrowLeft, UserPlus, Building2, Trash2, X, Stethoscope, Users, Plus, Package, ShieldCheck } from "lucide-react";
 
 interface OrgMember {
   user_id: string;
@@ -181,6 +181,9 @@ const OrgSettings = () => {
 
         {/* Items Management */}
         <OrgItemsManager orgId={currentOrg.id} />
+
+        {/* Insurance Management */}
+        <OrgInsurancesManager orgId={currentOrg.id} />
 
         {/* Members Table */}
         <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -437,6 +440,103 @@ const OrgItemsManager = ({ orgId }: { orgId: string }) => {
                 {item.name}
                 <button
                   onClick={() => deleteItem(item.id)}
+                  className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Insurance management component
+const OrgInsurancesManager = ({ orgId }: { orgId: string }) => {
+  const { toast } = useToast();
+  const [insurances, setInsurances] = useState<{ id: string; name: string }[]>([]);
+  const [newInsurance, setNewInsurance] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const fetchInsurances = useCallback(async () => {
+    const { data } = await supabase
+      .from("org_insurances" as any)
+      .select("id, name")
+      .eq("organization_id", orgId)
+      .order("name");
+    setInsurances((data as unknown as { id: string; name: string }[]) || []);
+    setLoading(false);
+  }, [orgId]);
+
+  useEffect(() => {
+    fetchInsurances();
+  }, [fetchInsurances]);
+
+  const addInsurance = async () => {
+    const trimmed = newInsurance.replace(/[<>{}]/g, "").trim();
+    if (!trimmed || trimmed.length > 100) return;
+    const { error } = await supabase
+      .from("org_insurances" as any)
+      .insert({ organization_id: orgId, name: trimmed });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setNewInsurance("");
+      fetchInsurances();
+      toast({ title: "Insurance added", description: `"${trimmed}" has been added.` });
+    }
+  };
+
+  const deleteInsurance = async (id: string) => {
+    await supabase.from("org_insurances" as any).delete().eq("id", id);
+    fetchInsurances();
+    toast({ title: "Insurance removed" });
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card">
+      <div className="border-b border-border bg-muted/30 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold text-foreground">Insurance Options</h3>
+        </div>
+        <span className="text-xs text-muted-foreground">Available in the New Patient form</span>
+      </div>
+      <div className="p-6 space-y-4">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newInsurance}
+            onChange={(e) => setNewInsurance(e.target.value.replace(/[<>{}]/g, ""))}
+            placeholder="e.g. Medicare, Medicaid, BlueCross"
+            maxLength={100}
+            className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/60"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addInsurance(); } }}
+          />
+          <button
+            onClick={addInsurance}
+            disabled={!newInsurance.trim()}
+            className="flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </button>
+        </div>
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : insurances.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic text-center py-4">No insurance options yet. Add insurances that doctors can select when submitting patients.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {insurances.map((ins) => (
+              <span key={ins.id} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 pl-3 pr-1.5 py-1.5 text-sm text-foreground">
+                {ins.name}
+                <button
+                  onClick={() => deleteInsurance(ins.id)}
                   className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                   <X className="h-3 w-3" />

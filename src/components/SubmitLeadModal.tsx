@@ -14,6 +14,11 @@ interface OrgItem {
   name: string;
 }
 
+interface OrgInsurance {
+  id: string;
+  name: string;
+}
+
 interface SubmitLeadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -24,6 +29,7 @@ interface SubmitLeadModalProps {
     address: string;
     item: string;
     diagnosis: string;
+    insurance: string;
     documents: { name: string; url: string }[];
   }) => void;
 }
@@ -41,6 +47,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     zip: "",
     item: "",
     diagnosis: "",
+    insurance: "",
   });
   const [certified, setCertified] = useState(true);
   const [dobDate, setDobDate] = useState<Date | undefined>();
@@ -49,7 +56,9 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [orgItems, setOrgItems] = useState<OrgItem[]>([]);
+  const [orgInsurances, setOrgInsurances] = useState<OrgInsurance[]>([]);
   const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
+  const [insuranceDropdownOpen, setInsuranceDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !currentOrg) return;
@@ -59,9 +68,18 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
         .select("id, name")
         .eq("organization_id", currentOrg.id)
         .order("name");
-      setOrgItems((data as OrgItem[]) || []);
+      setOrgItems((data as unknown as OrgItem[]) || []);
+    };
+    const fetchInsurances = async () => {
+      const { data } = await supabase
+        .from("org_insurances" as any)
+        .select("id, name")
+        .eq("organization_id", currentOrg.id)
+        .order("name");
+      setOrgInsurances((data as unknown as OrgInsurance[]) || []);
     };
     fetchItems();
+    fetchInsurances();
   }, [isOpen, currentOrg?.id]);
 
   if (!isOpen) return null;
@@ -108,6 +126,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
       address: [sanitize(form.address), sanitize(form.city), sanitize(form.state), sanitize(form.zip)].filter(Boolean).join(", "),
       item: sanitize(form.item),
       diagnosis: sanitize(form.diagnosis),
+      insurance: sanitize(form.insurance),
     };
 
     if (sanitizedForm.patientName.length > 100) {
@@ -153,7 +172,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     }
 
     onSubmit({ ...sanitizedForm, documents: uploadedDocs });
-    setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", diagnosis: "" });
+    setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", diagnosis: "", insurance: "" });
     setDobDate(undefined);
     setFiles([]);
     setUploading(false);
@@ -313,6 +332,62 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                   <input type="text" value={form.item} required className="sr-only" tabIndex={-1} onChange={() => {}} />
                 </div>
                 <Field label="Diagnosis" value={form.diagnosis} onChange={set("diagnosis")} required placeholder="e.g. M17.11" />
+
+                {/* Insurance dropdown */}
+                <div className="col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Insurance
+                  </label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setInsuranceDropdownOpen(!insuranceDropdownOpen)}
+                      className="flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
+                    >
+                      <span className={form.insurance ? "text-foreground" : "text-muted-foreground/60"}>
+                        {form.insurance || "Select insurance (optional)"}
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    {insuranceDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setInsuranceDropdownOpen(false)} />
+                        <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
+                          {form.insurance && (
+                            <button
+                              type="button"
+                              onClick={() => { setForm((p) => ({ ...p, insurance: "" })); setInsuranceDropdownOpen(false); }}
+                              className="w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted transition-colors italic"
+                            >
+                              Clear selection
+                            </button>
+                          )}
+                          {orgInsurances.length === 0 ? (
+                            <div className="px-3 py-4 text-xs text-muted-foreground text-center italic">
+                              No insurances configured by your admin
+                            </div>
+                          ) : (
+                            orgInsurances.map((ins) => (
+                              <button
+                                key={ins.id}
+                                type="button"
+                                onClick={() => {
+                                  setForm((p) => ({ ...p, insurance: ins.name }));
+                                  setInsuranceDropdownOpen(false);
+                                }}
+                                className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${
+                                  form.insurance === ins.name ? "bg-primary/10 text-primary font-medium" : "text-foreground"
+                                }`}
+                              >
+                                {ins.name}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 

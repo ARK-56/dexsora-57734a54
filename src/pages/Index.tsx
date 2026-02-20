@@ -62,6 +62,7 @@ const Index = () => {
     address: string;
     item: string;
     diagnosis: string;
+    insurance: string;
     documents: { name: string; url: string }[];
   }) => {
     await createLead(data);

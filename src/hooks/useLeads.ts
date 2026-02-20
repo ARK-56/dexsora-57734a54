@@ -132,6 +132,7 @@ export const useLeads = () => {
     address: string;
     item: string;
     diagnosis: string;
+    insurance: string;
     documents: { name: string; url: string }[];
   }) => {
     if (!user) return;
@@ -155,6 +156,7 @@ export const useLeads = () => {
         medicare_id: "N/A",
         item: data.item,
         diagnosis: data.diagnosis,
+        insurance: data.insurance || null,
         doctor_name: profile?.full_name || "Unknown",
         doctor_npi: profile?.npi || "",
         submitted_by: user.id,
