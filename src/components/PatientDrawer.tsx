@@ -66,6 +66,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
   const [uploading, setUploading] = useState(false);
   const [localDocs, setLocalDocs] = useState(lead?.documents ?? []);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const adminFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!lead) return;
@@ -80,17 +81,15 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
 
   if (!lead) return null;
 
-  // Filter admin-only docs for non-admin users
-  const visibleDocs = hasAdminAccess
-    ? localDocs
-    : localDocs.filter((d) => !d.is_admin_only);
+  // Public docs — visible to doctors and admins
+  const publicDocs = localDocs.filter((d) => !d.is_admin_only);
+  // Admin-only docs — visible only to admins
+  const adminDocs = localDocs.filter((d) => d.is_admin_only);
 
   // Doctors can upload only when status is "Need Additional Documents"
   const canUploadAdditionalDocs = !hasAdminAccess && lead?.status === "Need Additional Documents";
-  // Org admins can upload docs on any status EXCEPT "Need Additional Documents" (that's doctor-only)
-  const canAdminUpload = hasAdminAccess && lead?.status !== "Need Additional Documents";
 
-  const handleAdminUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, isAdminDoc: boolean) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !lead || !user) return;
     setUploading(true);
@@ -107,13 +106,12 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
           name: file.name,
           url: filePath,
           uploaded_by: user.id,
-          is_admin_only: hasAdminAccess,
+          is_admin_only: isAdminDoc,
           organization_id: lead.organization_id ?? null,
         } as any);
       }
       toast({ title: "Uploaded", description: `${files.length} document(s) uploaded.` });
 
-      // Refresh documents locally so no page reload needed
       const { data: freshDocs } = await supabase
         .from("lead_documents")
         .select("*")
@@ -125,6 +123,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
     }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (adminFileInputRef.current) adminFileInputRef.current.value = "";
   };
 
   const availableStatuses = getAvailableStatuses(lead.status, roles, hasAdminAccess);
@@ -258,76 +257,74 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
             </Section>
           )}
 
-          {/* Documents */}
-          <Section title={`Documents (${visibleDocs.length})`}>
-          {(canAdminUpload || canUploadAdditionalDocs) && (
+          {/* Documents — visible to everyone (doctors + admins) */}
+          <Section title={`Documents (${publicDocs.length})`}>
+            {canUploadAdditionalDocs && (
               <div className="mb-3">
                 <input
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  onChange={handleAdminUpload}
+                  onChange={(e) => handleUpload(e, false)}
                   className="hidden"
-                  id="admin-doc-upload"
+                  id="doc-upload"
                 />
-                {canUploadAdditionalDocs && (
-                  <div className="mb-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-                    Additional documents have been requested. Please upload them below.
-                  </div>
-                )}
+                <div className="mb-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                  Additional documents have been requested. Please upload them below.
+                </div>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                   className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50 w-full justify-center"
                 >
                   <Upload className="h-3.5 w-3.5" />
-                  {uploading ? "Uploading..." : canAdminUpload ? "Upload Admin Document" : "Upload Additional Documents"}
+                  {uploading ? "Uploading..." : "Upload Additional Documents"}
                 </button>
               </div>
             )}
-            {visibleDocs.length > 0 ? (
+            {publicDocs.length > 0 ? (
               <div className="space-y-2">
-                {visibleDocs.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center gap-3 rounded-lg border border-border p-3 transition-all hover:bg-muted/30 hover:border-primary/30 group"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-                      <FileText className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {doc.name}
-                        {doc.is_admin_only && (
-                          <span className="ml-1.5 inline-flex rounded-full bg-warning/20 px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground">ADMIN</span>
-                        )}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{new Date(doc.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        const url = await getSignedUrl("lead-documents", doc.url);
-                        window.open(url, "_blank");
-                      }}
-                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                      title="View"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => downloadFile(doc.url, doc.name)}
-                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                      title="Download"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                {publicDocs.map((doc) => (
+                  <DocRow key={doc.id} doc={doc} />
                 ))}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground italic">No documents uploaded yet</p>
             )}
           </Section>
+
+          {/* Admin Documents — only visible to org admins/owners */}
+          {hasAdminAccess && (
+            <Section title={`Admin Documents (${adminDocs.length})`}>
+              <div className="mb-3">
+                <input
+                  ref={adminFileInputRef}
+                  type="file"
+                  multiple
+                  onChange={(e) => handleUpload(e, true)}
+                  className="hidden"
+                  id="admin-doc-upload"
+                />
+                <button
+                  onClick={() => adminFileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50 w-full justify-center"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  {uploading ? "Uploading..." : "Upload Admin Document"}
+                </button>
+              </div>
+              {adminDocs.length > 0 ? (
+                <div className="space-y-2">
+                  {adminDocs.map((doc) => (
+                    <DocRow key={doc.id} doc={doc} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No admin documents yet</p>
+              )}
+            </Section>
+          )}
 
           {/* Timestamps */}
           <div className="border-t border-border pt-4 flex items-center justify-between text-xs text-muted-foreground">
@@ -356,5 +353,34 @@ const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string;
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="text-sm font-medium text-foreground break-words">{value}</p>
     </div>
+  </div>
+);
+
+const DocRow = ({ doc }: { doc: { id: string; name: string; url: string; created_at: string; is_admin_only: boolean } }) => (
+  <div className="flex items-center gap-3 rounded-lg border border-border p-3 transition-all hover:bg-muted/30 hover:border-primary/30 group">
+    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+      <FileText className="h-4 w-4" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
+      <p className="text-xs text-muted-foreground">{new Date(doc.created_at).toLocaleDateString()}</p>
+    </div>
+    <button
+      onClick={async () => {
+        const url = await getSignedUrl("lead-documents", doc.url);
+        window.open(url, "_blank");
+      }}
+      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      title="View"
+    >
+      <ExternalLink className="h-3.5 w-3.5" />
+    </button>
+    <button
+      onClick={() => downloadFile(doc.url, doc.name)}
+      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+      title="Download"
+    >
+      <Download className="h-3.5 w-3.5" />
+    </button>
   </div>
 );
