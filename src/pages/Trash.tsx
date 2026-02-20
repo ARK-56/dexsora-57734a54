@@ -134,9 +134,11 @@ const Trash = () => {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-muted/50">
-                  <th className="w-10 px-3 py-3 text-center">
-                    <input type="checkbox" className="h-4 w-4 accent-primary" checked={selectedIds.length === trashedLeads.length && trashedLeads.length > 0} onChange={toggleAll} />
-                  </th>
+                  {isEffectiveAdmin && (
+                    <th className="w-10 px-3 py-3 text-center">
+                      <input type="checkbox" className="h-4 w-4 accent-primary" checked={selectedIds.length === trashedLeads.length && trashedLeads.length > 0} onChange={toggleAll} />
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Patient</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Deleted</th>
@@ -148,9 +150,11 @@ const Trash = () => {
                   const daysLeft = lead.deleted_at ? getDaysUntilDeletion(lead.deleted_at) : 60;
                   return (
                     <tr key={lead.id} className={idx % 2 === 0 ? "bg-card" : "bg-muted/20"}>
-                      <td className="px-3 py-2.5 text-center">
-                        <input type="checkbox" className="h-4 w-4 accent-primary" checked={selectedIds.includes(lead.id)} onChange={() => toggleSelect(lead.id)} />
-                      </td>
+                      {isEffectiveAdmin && (
+                        <td className="px-3 py-2.5 text-center">
+                          <input type="checkbox" className="h-4 w-4 accent-primary" checked={selectedIds.includes(lead.id)} onChange={() => toggleSelect(lead.id)} />
+                        </td>
+                      )}
                       <td className="px-4 py-2.5 font-semibold text-foreground">{lead.patient_name}</td>
                       <td className="px-4 py-2.5"><StatusBadge status={lead.status as LeadStatus} /></td>
                       <td className="px-4 py-2.5 text-muted-foreground text-xs">
