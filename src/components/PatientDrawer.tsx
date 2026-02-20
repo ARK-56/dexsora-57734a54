@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { downloadFile } from "@/lib/downloadFile";
 import { getSignedUrl } from "@/lib/getSignedUrl";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrg } from "@/contexts/OrgContext";
 import { useToast } from "@/hooks/use-toast";
 
 // For doctor view: only lifecycle statuses shown as-is, everything else shows as "Delivered"
@@ -61,6 +62,9 @@ interface LeadNote {
 export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onUpdateStatus }: PatientDrawerProps) => {
   const [editingStatus, setEditingStatus] = useState(false);
   const { roles, hasAdminAccess, user } = useAuth();
+  const { isOrgAdmin, isOrgOwner } = useOrg();
+  // An org admin/owner also counts as having admin access in this drawer
+  const isEffectiveAdmin = hasAdminAccess || isOrgAdmin || isOrgOwner;
   const { toast } = useToast();
   const [notes, setNotes] = useState<LeadNote[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -87,7 +91,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
   const adminDocs = localDocs.filter((d) => d.is_admin_only);
 
   // Doctors can upload only when status is "Need Additional Documents"
-  const canUploadAdditionalDocs = !hasAdminAccess && lead?.status === "Need Additional Documents";
+  const canUploadAdditionalDocs = !isEffectiveAdmin && lead?.status === "Need Additional Documents";
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, isAdminDoc: boolean) => {
     const files = e.target.files;
@@ -126,7 +130,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
     if (adminFileInputRef.current) adminFileInputRef.current.value = "";
   };
 
-  const availableStatuses = getAvailableStatuses(lead.status, roles, hasAdminAccess);
+  const availableStatuses = getAvailableStatuses(lead.status, roles, isEffectiveAdmin);
 
   const initials = lead.patient_name
     .split(" ")
@@ -165,7 +169,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
           <div className="flex items-center justify-between px-5 py-3">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</span>
             <div className="flex items-center gap-2">
-              <StatusBadge status={getDoctorDisplayStatus(lead.status, hasAdminAccess)} />
+              <StatusBadge status={getDoctorDisplayStatus(lead.status, isEffectiveAdmin)} />
               {canUpdateStatus && availableStatuses.length > 0 && (
                 <button
                   onClick={() => setEditingStatus(!editingStatus)}
@@ -293,8 +297,8 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
             )}
           </Section>
 
-          {/* Admin Documents — only visible to org admins/owners */}
-          {hasAdminAccess && (
+          {/* Admin Documents — only visible to org admins/owners and platform admins */}
+          {isEffectiveAdmin && (
             <Section title={`Admin Documents (${adminDocs.length})`}>
               <div className="mb-3">
                 <input
