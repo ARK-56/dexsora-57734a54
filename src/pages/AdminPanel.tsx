@@ -53,6 +53,8 @@ const STATUS_LABELS: Record<string, string> = {
   "New Lead": "New Patient",
   "Pending": "Pending",
   "Need Additional Documents": "Need Additional Documents",
+  "Auth Applied": "Auth Applied",
+  "Auth Approved": "Auth Approved",
   "Eligible": "Eligible",
   "Shipped": "Shipped",
   "Delivered": "Delivered",
