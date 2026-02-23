@@ -55,7 +55,7 @@ const STATUS_LABELS: Record<string, string> = {
   "Need Additional Documents": "Need Additional Documents",
   "Auth Applied": "Auth Applied",
   "Auth Approved": "Auth Approved",
-  "Eligible": "Eligible",
+  "Eligible": "Need to Ship",
   "Shipped": "Shipped",
   "Delivered": "Delivered",
   "Need To Bill": "Need To Bill Cases",
@@ -69,9 +69,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const getAvailableStatuses = (currentStatus: string, roles: string[], isOrgOwnerOrAdmin: boolean): LeadStatus[] => {
-  const isAdmin = roles.includes("admin") || isOrgOwnerOrAdmin;
-  if (isAdmin) return ALL_STATUSES;
-
+  // Check specific department roles first, before the admin catch-all
   const isEligibility = roles.includes("eligibility") || roles.includes("auth_team");
   const isShipment = roles.includes("shipment");
   const isBilling = roles.includes("billing");
@@ -85,6 +83,10 @@ const getAvailableStatuses = (currentStatus: string, roles: string[], isOrgOwner
   if (isBilling) {
     return ["PrePay Audit", "Appeal", "Paid", "Denied", "PostPay Audit"];
   }
+
+  const isAdmin = roles.includes("admin") || isOrgOwnerOrAdmin;
+  if (isAdmin) return ALL_STATUSES;
+
   return [];
 };
 
