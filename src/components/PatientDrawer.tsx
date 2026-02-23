@@ -39,14 +39,14 @@ const getAvailableStatuses = (currentStatus: string, roles: string[], isAdminUse
   const isShipment = roles.includes("shipment");
   const isBilling = roles.includes("billing");
 
-  if (isEligibility && (currentStatus === "New Lead" || currentStatus === "Pending")) {
-    return ["Eligible", "Not Eligible", "Need Additional Documents"];
+  if (isEligibility) {
+    return ["New Lead", "Pending", "Need Additional Documents", "Auth Applied", "Auth Approved", "Eligible", "Not Eligible", "Denied"];
   }
-  if (isShipment && (currentStatus === "Eligible" || currentStatus === "Need Additional Documents")) {
-    return ["Shipped", "Delivered"];
+  if (isShipment) {
+    return ["Eligible", "Shipped", "Delivered", "Need To Bill"];
   }
-  if (isBilling && (currentStatus === "Shipped" || currentStatus === "Delivered")) {
-    return ["Auth Applied", "Billed", "Paid", "Denied"];
+  if (isBilling) {
+    return ["PrePay Audit", "Appeal", "Paid", "Denied", "PostPay Audit"];
   }
   return [];
 };
