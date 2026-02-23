@@ -99,7 +99,7 @@ export const Header = ({ searchQuery = "", onSearchChange, onNotificationClick }
             }
           </Link>}
 
-          {!isSuperAdminOnly && !isMarketingRole && (isOrgOwner || isOrgAdmin) &&
+          {!isSuperAdminOnly && (isMarketingRole || isOrgOwner || isOrgAdmin) &&
           <Link
             to="/org-settings"
             className="flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-medium text-white/90 transition-colors hover:bg-white/20">

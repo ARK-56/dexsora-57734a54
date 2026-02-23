@@ -223,7 +223,8 @@ const AdminPanel = () => {
 
   if (user?.user_metadata?.pending_setup) return <Navigate to="/setup-account" replace />;
   if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
-  if (!hasAdminAccess && !isOrgOwner && !isOrgAdmin) return <Navigate to="/" replace />;
+  const isLogisticsRole = roles.includes("logistics");
+  if (!hasAdminAccess && !isOrgOwner && !isOrgAdmin && !isLogisticsRole) return <Navigate to="/" replace />;
 
   const getUserRoles = (userId: string) =>
     userRoles.filter((r) => r.user_id === userId).map((r) => r.role);
@@ -390,6 +391,7 @@ const AdminPanel = () => {
   };
 
   const availableStatusesForRole = (currentStatus: string) => getAvailableStatuses(currentStatus, roles, isOrgOwner || isOrgAdmin);
+  const canChangeStatuses = !isLogisticsRole;
 
   return (
     <div className="min-h-screen bg-background">
@@ -525,7 +527,7 @@ const AdminPanel = () => {
             {/* Left: All Leads table */}
             <div className="space-y-4 min-w-0">
               {/* Bulk action bar */}
-              {selectedLeadIds.length > 0 && (
+              {canChangeStatuses && selectedLeadIds.length > 0 && (
                 <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
                   <span className="text-sm font-semibold text-foreground">{selectedLeadIds.length} selected</span>
                   <div className="flex items-center gap-2 ml-auto">
@@ -589,7 +591,7 @@ const AdminPanel = () => {
                       <table className="w-full border-collapse text-sm">
                         <thead>
                           <tr className="swoosh-gradient">
-                            <th className="w-10 px-3 py-3 text-center">
+                            {canChangeStatuses && <th className="w-10 px-3 py-3 text-center">
                               <input
                                 type="checkbox"
                                 className="h-4 w-4 accent-primary rounded"
@@ -602,14 +604,14 @@ const AdminPanel = () => {
                                   }
                                 }}
                               />
-                            </th>
+                            </th>}
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Patient</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Doctor</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Status</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Item</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Docs</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Order Date</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Actions</th>
+                            {canChangeStatuses && <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Actions</th>}
                           </tr>
                         </thead>
                         <tbody>
@@ -621,7 +623,7 @@ const AdminPanel = () => {
                                 key={lead.id}
                                 className={`border-b border-border transition-colors hover:bg-muted/30 ${idx % 2 === 1 ? "bg-muted/10" : ""} ${isChecked ? "!bg-primary/10 ring-1 ring-inset ring-primary/20" : ""}`}
                               >
-                                <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                {canChangeStatuses && <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                                   <input
                                     type="checkbox"
                                     className="h-4 w-4 accent-primary rounded"
@@ -630,7 +632,7 @@ const AdminPanel = () => {
                                       prev.includes(lead.id) ? prev.filter(id => id !== lead.id) : [...prev, lead.id]
                                     )}
                                   />
-                                </td>
+                                </td>}
                                 <td className="px-4 py-3 cursor-pointer" onClick={() => setSelectedLead(lead)}>
                                   <p className="text-sm font-semibold text-primary hover:underline">{lead.patient_name}</p>
                                 </td>
@@ -648,7 +650,7 @@ const AdminPanel = () => {
                                 <td className="px-4 py-3 text-sm text-muted-foreground">
                                   {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                 </td>
-                                <td className="px-4 py-3">
+                                {canChangeStatuses && <td className="px-4 py-3">
                                   <div className="flex items-center gap-2">
                                     {availStatuses.length > 0 ? (
                                       <select
@@ -674,7 +676,7 @@ const AdminPanel = () => {
                                       </button>
                                     )}
                                   </div>
-                                </td>
+                                </td>}
                               </tr>
                             );
                           })}
