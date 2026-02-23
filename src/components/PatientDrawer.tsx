@@ -33,6 +33,16 @@ const ALL_STATUSES: LeadStatus[] = [
   "PrePay Audit", "Appeal", "Paid", "Denied", "PostPay Audit", "Completed",
 ];
 
+const STATUS_DISPLAY_LABELS: Partial<Record<LeadStatus, string>> = {
+  "Eligible": "Need to Ship",
+  "Need To Bill": "Need to Bill Cases",
+  "PrePay Audit": "Pre Pay Audit Cases",
+  "Appeal": "Appeal Cases",
+  "Paid": "Paid Cases",
+  "Denied": "Denied Cases",
+  "PostPay Audit": "Post Pay Cases",
+};
+
 const getAvailableStatuses = (currentStatus: string, roles: string[], isAdminUser: boolean): LeadStatus[] => {
   // Check specific department roles first, before the admin catch-all
   const isEligibility = roles.includes("eligibility") || roles.includes("auth_team");
@@ -221,7 +231,7 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
                   }}
                   className="rounded-md border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
-                  {s}
+                  {STATUS_DISPLAY_LABELS[s] || s}
                 </button>
               ))}
             </div>
