@@ -8,7 +8,7 @@ interface StatsBarProps {
 
 const statuses: { status: LeadStatus | "new"; label: string; icon: React.ReactNode }[] = [
   { status: "new", label: "New Patients/Pending", icon: <Clock className="h-4 w-4" /> },
-  { status: "Eligible", label: "Eligible", icon: <CheckCircle className="h-4 w-4" /> },
+  { status: "Eligible", label: "Need to Ship", icon: <CheckCircle className="h-4 w-4" /> },
   { status: "Shipped", label: "Shipped", icon: <Package className="h-4 w-4" /> },
 ];
 

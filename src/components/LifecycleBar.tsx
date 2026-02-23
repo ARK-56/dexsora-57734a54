@@ -4,7 +4,7 @@ import { ArrowRight, Sparkles, Clock, CheckCircle2, Package, Home } from "lucide
 const steps: { status: LeadStatus; label: string; icon: React.ReactNode }[] = [
   { status: "New Lead", label: "New Patient", icon: <Sparkles className="h-3.5 w-3.5" /> },
   { status: "Pending", label: "Pending", icon: <Clock className="h-3.5 w-3.5" /> },
-  { status: "Eligible", label: "Eligible", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+  { status: "Eligible", label: "Need to Ship", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
   { status: "Shipped", label: "Shipped", icon: <Package className="h-3.5 w-3.5" /> },
   { status: "Delivered", label: "Delivered", icon: <Home className="h-3.5 w-3.5" /> },
 ];
