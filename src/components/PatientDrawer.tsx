@@ -27,8 +27,10 @@ interface PatientDrawerProps {
 }
 
 const ALL_STATUSES: LeadStatus[] = [
-  "New Lead", "Pending", "Eligible", "Not Eligible", "Need Additional Documents",
-  "Shipped", "Delivered", "Auth Applied", "Billed", "Paid", "Denied",
+  "New Lead", "Pending", "Need Additional Documents", "Auth Applied", "Auth Approved",
+  "Eligible", "Not Eligible", "Shipped", "Delivered", "Need To Bill",
+  "Billed", "Pre Payment Request", "Post Payment Request",
+  "PrePay Audit", "Appeal", "Paid", "Denied", "PostPay Audit", "Completed",
 ];
 
 const getAvailableStatuses = (currentStatus: string, roles: string[], isAdminUser: boolean): LeadStatus[] => {
