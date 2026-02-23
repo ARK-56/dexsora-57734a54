@@ -45,7 +45,7 @@ const ROLE_LABELS: Record<string, string> = {
 const formatRole = (role: string) => ROLE_LABELS[role] ?? role.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
 const ALL_STATUSES: LeadStatus[] = [
-  "New Lead", "Pending", "Need Additional Documents", "Eligible", "Shipped", "Delivered",
+  "New Lead", "Pending", "Need Additional Documents", "Auth Applied", "Auth Approved", "Eligible", "Shipped", "Delivered",
   "Need To Bill", "Billed", "PrePay Audit", "Appeal", "Paid", "Denied", "PostPay Audit", "Not Eligible",
 ];
 
