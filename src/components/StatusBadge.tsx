@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 const statusConfig: Record<LeadStatus, { bg: string; text: string; label: string }> = {
   "New Lead": { bg: "bg-primary", text: "text-primary-foreground", label: "NEW PATIENT" },
   Pending: { bg: "bg-warning", text: "text-warning-foreground", label: "PENDING" },
-  Eligible: { bg: "bg-success", text: "text-success-foreground", label: "ELIGIBLE" },
+  Eligible: { bg: "bg-success", text: "text-success-foreground", label: "NEED TO SHIP" },
   "Not Eligible": { bg: "bg-destructive", text: "text-destructive-foreground", label: "NOT ELIGIBLE" },
   "Need Additional Documents": { bg: "bg-warning", text: "text-warning-foreground", label: "NEED DOCS" },
   Shipped: { bg: "bg-primary", text: "text-primary-foreground", label: "SHIPPED" },
