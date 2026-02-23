@@ -51,8 +51,18 @@ interface OrgMemberRow {
   role: string;
 }
 
-const formatRole = (role: string) =>
-  role.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+const ROLE_LABELS: Record<string, string> = {
+  doctor: "Doctor/Facility",
+  eligibility: "Eligibility and Auth Department",
+  auth_team: "Eligibility and Auth Department",
+  billing: "Billing Department",
+  shipment: "Shipment Department",
+  logistics: "Marketing Department",
+  admin: "Admin",
+  super_admin: "Super Admin",
+};
+
+const formatRole = (role: string) => ROLE_LABELS[role] ?? role.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
 const PER_PAGE = 15;
 
