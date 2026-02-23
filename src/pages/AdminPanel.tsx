@@ -105,7 +105,7 @@ const AdminPanel = () => {
   const [editForm, setEditForm] = useState({ fullName: "", email: "", role: "", password: "" });
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"users" | "leads" | "chat">("leads");
-  const [leadsSubTab, setLeadsSubTab] = useState<"all" | "eligibility" | "needadditionaldocs" | "eligible" | "shipment" | "delivered" | "denied" | "billed" | "needtobill" | "prepayaudit" | "appeal" | "paid" | "postpayaudit" | "noteligible">("all");
+  const [leadsSubTab, setLeadsSubTab] = useState<"all" | "eligibility" | "needadditionaldocs" | "authapplied" | "authapproved" | "eligible" | "shipment" | "delivered" | "denied" | "billed" | "needtobill" | "prepayaudit" | "appeal" | "paid" | "postpayaudit" | "noteligible">("all");
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [bulkStatus, setBulkStatus] = useState<string>("");
   const [noteModal, setNoteModal] = useState<{ leadId: string; patientName: string } | null>(null);
@@ -518,6 +518,8 @@ const AdminPanel = () => {
                   const filteredLeads = leadsSubTab === "all" ? leads.filter(l => l.status === "New Lead")
                     : leadsSubTab === "eligibility" ? leads.filter(l => l.status === "Pending")
                     : leadsSubTab === "needadditionaldocs" ? leads.filter(l => l.status === "Need Additional Documents")
+                    : leadsSubTab === "authapplied" ? leads.filter(l => l.status === "Auth Applied")
+                    : leadsSubTab === "authapproved" ? leads.filter(l => l.status === "Auth Approved")
                     : leadsSubTab === "eligible" ? leads.filter(l => l.status === "Eligible")
                     : leadsSubTab === "shipment" ? leads.filter(l => l.status === "Shipped")
                     : leadsSubTab === "delivered" ? leads.filter(l => l.status === "Delivered")
@@ -649,6 +651,8 @@ const AdminPanel = () => {
                       { key: "all" as const, label: "New Patient", count: leads.filter(l => l.status === "New Lead").length },
                       { key: "eligibility" as const, label: "Pending", count: leads.filter(l => l.status === "Pending").length },
                       { key: "needadditionaldocs" as const, label: "Need Additional Documents", count: leads.filter(l => l.status === "Need Additional Documents").length },
+                      { key: "authapplied" as const, label: "Auth Applied", count: leads.filter(l => l.status === "Auth Applied").length },
+                      { key: "authapproved" as const, label: "Auth Approved", count: leads.filter(l => l.status === "Auth Approved").length },
                       { key: "eligible" as const, label: "Eligible", count: leads.filter(l => l.status === "Eligible").length },
                       { key: "shipment" as const, label: "Shipped", count: leads.filter(l => l.status === "Shipped").length },
                       { key: "delivered" as const, label: "Delivered", count: leads.filter(l => l.status === "Delivered").length },
