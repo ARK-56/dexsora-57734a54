@@ -72,20 +72,65 @@ const getAvailableStatuses = (currentStatus: string, roles: string[], isOrgOwner
   const isAdmin = roles.includes("admin") || isOrgOwnerOrAdmin;
   if (isAdmin) return ALL_STATUSES;
 
-  const isEligibility = roles.includes("eligibility");
+  const isEligibility = roles.includes("eligibility") || roles.includes("auth_team");
   const isShipment = roles.includes("shipment");
   const isBilling = roles.includes("billing");
 
-  if (isEligibility && (currentStatus === "New Lead" || currentStatus === "Pending")) {
-    return ["Eligible", "Not Eligible", "Need Additional Documents"];
+  if (isEligibility) {
+    return ["New Lead", "Pending", "Need Additional Documents", "Auth Applied", "Auth Approved", "Eligible", "Not Eligible", "Denied"];
   }
-  if (isShipment && (currentStatus === "Eligible" || currentStatus === "Need Additional Documents")) {
-    return ["Shipped", "Delivered"];
+  if (isShipment) {
+    return ["Eligible", "Shipped", "Delivered", "Need To Bill"];
   }
-  if (isBilling && (currentStatus === "Shipped" || currentStatus === "Delivered")) {
-    return ["Auth Applied", "Billed", "Paid", "Denied"];
+  if (isBilling) {
+    return ["PrePay Audit", "Appeal", "Paid", "Denied", "PostPay Audit"];
   }
   return [];
+};
+
+type TabKey = "all" | "eligibility" | "needadditionaldocs" | "authapplied" | "authapproved" | "eligible" | "shipment" | "delivered" | "denied" | "billed" | "needtobill" | "prepayaudit" | "appeal" | "paid" | "postpayaudit" | "noteligible";
+
+interface TabDef {
+  key: TabKey;
+  label: string;
+  status: string;
+}
+
+const ALL_TABS: TabDef[] = [
+  { key: "all", label: "New Patient", status: "New Lead" },
+  { key: "eligibility", label: "Pending", status: "Pending" },
+  { key: "needadditionaldocs", label: "Need Additional Documents", status: "Need Additional Documents" },
+  { key: "authapplied", label: "Auth Applied", status: "Auth Applied" },
+  { key: "authapproved", label: "Auth Approved", status: "Auth Approved" },
+  { key: "eligible", label: "Need to Ship", status: "Eligible" },
+  { key: "shipment", label: "Shipped", status: "Shipped" },
+  { key: "delivered", label: "Delivered", status: "Delivered" },
+  { key: "needtobill", label: "Need To Bill Cases", status: "Need To Bill" },
+  { key: "billed", label: "Billed Cases", status: "Billed" },
+  { key: "prepayaudit", label: "PrePay Audit Cases", status: "PrePay Audit" },
+  { key: "appeal", label: "Appeal Cases", status: "Appeal" },
+  { key: "paid", label: "Paid Cases", status: "Paid" },
+  { key: "denied", label: "Denied Cases", status: "Denied" },
+  { key: "postpayaudit", label: "PostPay Audit Cases", status: "PostPay Audit" },
+  { key: "noteligible", label: "Not Eligible", status: "Not Eligible" },
+];
+
+const ELIGIBILITY_TABS: TabKey[] = ["all", "eligibility", "needadditionaldocs", "authapplied", "authapproved", "eligible", "noteligible", "denied"];
+const SHIPMENT_TABS: TabKey[] = ["eligible", "shipment", "delivered", "needtobill"];
+// Billing sees all tabs
+
+const getVisibleTabs = (roles: string[], isOrgOwnerOrAdmin: boolean): TabDef[] => {
+  const isAdmin = roles.includes("admin") || isOrgOwnerOrAdmin;
+  if (isAdmin) return ALL_TABS;
+
+  const isEligibility = roles.includes("eligibility") || roles.includes("auth_team");
+  const isShipment = roles.includes("shipment");
+  const isBilling = roles.includes("billing");
+
+  if (isEligibility) return ALL_TABS.filter(t => ELIGIBILITY_TABS.includes(t.key));
+  if (isShipment) return ALL_TABS.filter(t => SHIPMENT_TABS.includes(t.key));
+  if (isBilling) return ALL_TABS;
+  return ALL_TABS;
 };
 
 const AdminPanel = () => {
@@ -105,7 +150,8 @@ const AdminPanel = () => {
   const [editForm, setEditForm] = useState({ fullName: "", email: "", role: "", password: "" });
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"users" | "leads" | "chat">("leads");
-  const [leadsSubTab, setLeadsSubTab] = useState<"all" | "eligibility" | "needadditionaldocs" | "authapplied" | "authapproved" | "eligible" | "shipment" | "delivered" | "denied" | "billed" | "needtobill" | "prepayaudit" | "appeal" | "paid" | "postpayaudit" | "noteligible">("all");
+  const visibleTabs = getVisibleTabs(roles, isOrgOwner || isOrgAdmin);
+  const [leadsSubTab, setLeadsSubTab] = useState<TabKey>(() => visibleTabs[0]?.key ?? "all");
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [bulkStatus, setBulkStatus] = useState<string>("");
   const [noteModal, setNoteModal] = useState<{ leadId: string; patientName: string } | null>(null);
@@ -647,24 +693,8 @@ const AdminPanel = () => {
                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-white/80">Filter by Status</h3>
                   </div>
                   <div className="p-2 space-y-0.5">
-                    {([
-                      { key: "all" as const, label: "New Patient", count: leads.filter(l => l.status === "New Lead").length },
-                      { key: "eligibility" as const, label: "Pending", count: leads.filter(l => l.status === "Pending").length },
-                      { key: "needadditionaldocs" as const, label: "Need Additional Documents", count: leads.filter(l => l.status === "Need Additional Documents").length },
-                      { key: "authapplied" as const, label: "Auth Applied", count: leads.filter(l => l.status === "Auth Applied").length },
-                      { key: "authapproved" as const, label: "Auth Approved", count: leads.filter(l => l.status === "Auth Approved").length },
-                      { key: "eligible" as const, label: "Eligible", count: leads.filter(l => l.status === "Eligible").length },
-                      { key: "shipment" as const, label: "Shipped", count: leads.filter(l => l.status === "Shipped").length },
-                      { key: "delivered" as const, label: "Delivered", count: leads.filter(l => l.status === "Delivered").length },
-                      { key: "needtobill" as const, label: "Need To Bill Cases", count: leads.filter(l => l.status === "Need To Bill").length },
-                      { key: "billed" as const, label: "Billed Cases", count: leads.filter(l => l.status === "Billed").length },
-                      { key: "prepayaudit" as const, label: "PrePay Audit Cases", count: leads.filter(l => l.status === "PrePay Audit").length },
-                      { key: "appeal" as const, label: "Appeal Cases", count: leads.filter(l => l.status === "Appeal").length },
-                      { key: "paid" as const, label: "Paid Cases", count: leads.filter(l => l.status === "Paid").length },
-                      { key: "denied" as const, label: "Denied Cases", count: leads.filter(l => l.status === "Denied").length },
-                      { key: "postpayaudit" as const, label: "PostPay Audit Cases", count: leads.filter(l => l.status === "PostPay Audit").length },
-                      { key: "noteligible" as const, label: "Not Eligible", count: leads.filter(l => l.status === "Not Eligible").length },
-                    ]).map((tab) => {
+                    {getVisibleTabs(roles, isOrgOwner || isOrgAdmin).map((tab) => {
+                      const count = leads.filter(l => l.status === tab.status).length;
                       const isActive = leadsSubTab === tab.key;
                       return (
                         <button
@@ -679,9 +709,9 @@ const AdminPanel = () => {
                             {tab.label}
                           </span>
                           <span className={`min-w-[22px] text-center text-xs font-bold rounded-full px-1.5 py-0.5 ${
-                            isActive ? "bg-primary/15 text-primary" : tab.count > 0 ? "bg-muted text-muted-foreground" : "text-muted-foreground/40"
+                            isActive ? "bg-primary/15 text-primary" : count > 0 ? "bg-muted text-muted-foreground" : "text-muted-foreground/40"
                           }`}>
-                            {tab.count}
+                            {count}
                           </span>
                         </button>
                       );
