@@ -31,8 +31,18 @@ interface RoleRow {
 const STAFF_ROLE_OPTIONS = ["admin", "eligibility", "shipment", "billing"] as const;
 const ALL_ROLE_OPTIONS = ["admin", "doctor", "eligibility", "shipment", "billing"] as const;
 
-const formatRole = (role: string) =>
-  role.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+const ROLE_LABELS: Record<string, string> = {
+  doctor: "Doctor/Facility",
+  eligibility: "Eligibility and Auth Department",
+  auth_team: "Eligibility and Auth Department",
+  billing: "Billing Department",
+  shipment: "Shipment Department",
+  logistics: "Marketing Department",
+  admin: "Admin",
+  super_admin: "Super Admin",
+};
+
+const formatRole = (role: string) => ROLE_LABELS[role] ?? role.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
 const ALL_STATUSES: LeadStatus[] = [
   "New Lead", "Pending", "Need Additional Documents", "Eligible", "Shipped", "Delivered",

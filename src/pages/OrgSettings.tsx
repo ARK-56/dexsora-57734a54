@@ -19,7 +19,7 @@ interface OrgMember {
 
 const INVITE_ROLES = [
   { value: "doctor", label: "Doctor/Facility" },
-  { value: "eligibility", label: "Eligibility and Auth Team" },
+  { value: "eligibility", label: "Eligibility and Auth Department" },
   { value: "billing", label: "Billing Department" },
   { value: "shipment", label: "Shipment Department" },
   { value: "logistics", label: "Marketing Department" },
@@ -27,8 +27,8 @@ const INVITE_ROLES = [
 
 const ROLE_LABELS: Record<string, string> = {
   doctor: "Doctor/Facility",
-  eligibility: "Eligibility and Auth Team",
-  auth_team: "Eligibility and Auth Team",
+  eligibility: "Eligibility and Auth Department",
+  auth_team: "Eligibility and Auth Department",
   billing: "Billing Department",
   shipment: "Shipment Department",
   logistics: "Marketing Department",
