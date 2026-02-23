@@ -34,9 +34,7 @@ const ALL_STATUSES: LeadStatus[] = [
 ];
 
 const getAvailableStatuses = (currentStatus: string, roles: string[], isAdminUser: boolean): LeadStatus[] => {
-  const isAdmin = roles.includes("admin") || isAdminUser;
-  if (isAdmin) return ALL_STATUSES;
-
+  // Check specific department roles first, before the admin catch-all
   const isEligibility = roles.includes("eligibility") || roles.includes("auth_team");
   const isShipment = roles.includes("shipment");
   const isBilling = roles.includes("billing");
@@ -50,6 +48,11 @@ const getAvailableStatuses = (currentStatus: string, roles: string[], isAdminUse
   if (isBilling) {
     return ["PrePay Audit", "Appeal", "Paid", "Denied", "PostPay Audit"];
   }
+
+  // Admin / org owner / org admin get all statuses
+  const isAdmin = roles.includes("admin") || isAdminUser;
+  if (isAdmin) return ALL_STATUSES;
+
   return [];
 };
 
