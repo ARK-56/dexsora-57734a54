@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 255;
 const isValidNPI = (npi: string) => /^\d{10}$/.test(npi);
-const VALID_ORG_ROLES = ["doctor", "eligibility", "auth_team", "shipment", "billing"];
+const VALID_ORG_ROLES = ["doctor", "eligibility", "auth_team", "shipment", "billing", "logistics"];
 
 async function sendOrgInviteEmail(email: string, orgName: string, role: string, setupUrl: string) {
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
