@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 function generateCode(): string {
@@ -17,36 +17,50 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json();
-    if (!email) throw new Error("Email is required");
-
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    // Look up user by email
-    const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
-    const user = usersData?.users?.find((u: any) => u.email === email);
-    if (!user) {
-      // Don't reveal if email exists or not — always say "sent"
-      return new Response(JSON.stringify({ message: "If that email exists, a code was sent." }), {
+    const { email, password } = await req.json();
+    if (!email || !password) {
+      return new Response(JSON.stringify({ error: "Email and password are required" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Validate credentials by attempting sign-in server-side
+    const tempClient = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: signInData, error: signInError } = await tempClient.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError || !signInData?.user) {
+      return new Response(JSON.stringify({ error: "Invalid email or password" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Sign out the server-side session immediately
+    await tempClient.auth.signOut();
+
+    const userId = signInData.user.id;
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Clean up old codes for this user
     await supabaseAdmin
       .from("login_verifications")
       .delete()
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     const code = generateCode();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min
 
     const { error: insertError } = await supabaseAdmin
       .from("login_verifications")
-      .insert({ user_id: user.id, code, expires_at: expiresAt });
+      .insert({ user_id: userId, code, expires_at: expiresAt });
 
     if (insertError) throw insertError;
 
