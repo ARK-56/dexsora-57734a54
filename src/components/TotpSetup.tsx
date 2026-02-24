@@ -44,6 +44,7 @@ export const TotpSetup = () => {
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
         friendlyName: "Google Authenticator",
+        issuer: "Dexsora",
       });
       if (error) throw error;
 
