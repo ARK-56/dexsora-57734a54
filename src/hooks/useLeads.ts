@@ -142,8 +142,13 @@ export const useLeads = () => {
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
-    // Scope by organization if user has one
-    if (currentOrg) {
+    // Doctors/facility users only see their own leads; admins see all org leads
+    if (!hasAdminAccess && !isMarketingRole) {
+      query = query.eq("submitted_by", user.id);
+      if (currentOrg) {
+        query = query.eq("organization_id", currentOrg.id);
+      }
+    } else if (currentOrg) {
       query = query.eq("organization_id", currentOrg.id);
     } else if (!hasAdminAccess) {
       query = query.eq("submitted_by", user.id);
