@@ -109,9 +109,11 @@ const Login = () => {
       }
 
       if (data?.verified) {
-        // Code verified — sign in for real
+        // Code verified — sign in for real, reset step so redirect triggers
+        setStep("credentials");
         const { error: finalError } = await signIn(savedEmail, savedPassword);
         if (finalError) {
+          setStep("code");
           setError("Verification succeeded but sign-in failed. Please try again.");
         }
       }
