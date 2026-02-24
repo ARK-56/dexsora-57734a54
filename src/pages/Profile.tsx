@@ -3,15 +3,23 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { ArrowLeft, Camera } from "lucide-react";
+import { ArrowLeft, Camera, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const Profile = () => {
   const { user, profile, loading, refreshProfile, isSuperAdmin, hasAdminAccess, isDoctor } = useAuth();
   const { toast } = useToast();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -85,6 +93,32 @@ const Profile = () => {
     setUploading(false);
   };
 
+  const handleUpdatePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast({ title: "Error", description: "Please fill in all password fields.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Error", description: "Password must be at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" });
+      return;
+    }
+    setUpdatingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Password updated", description: "Your password has been changed successfully." });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+    setUpdatingPassword(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -132,6 +166,41 @@ const Profile = () => {
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Email</label>
             <p className="h-10 flex items-center rounded-lg border border-input bg-muted px-3 text-sm text-foreground">{email || "—"}</p>
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <h2 className="text-sm font-semibold text-foreground">Change Password</h2>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">New Password</label>
+            <div className="relative">
+              <Input
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+              />
+              <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Confirm Password</label>
+            <div className="relative">
+              <Input
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+              />
+              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <Button onClick={handleUpdatePassword} disabled={updatingPassword} className="w-full">
+            {updatingPassword ? "Updating..." : "Update Password"}
+          </Button>
         </div>
       </main>
     </div>
