@@ -8,7 +8,7 @@ const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 60_000;
 
 const Login = () => {
-  const { user, loading, signIn, signOut } = useAuth();
+  const { user, loading, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,6 @@ const Login = () => {
   const [verifying, setVerifying] = useState(false);
   const [savedEmail, setSavedEmail] = useState("");
   const [savedPassword, setSavedPassword] = useState("");
-  const blockRedirectRef = useRef(false);
 
   if (loading) {
     return (
@@ -34,8 +33,8 @@ const Login = () => {
     );
   }
 
-  // Redirect when user is authenticated and we're not blocking (during credential validation before 2FA)
-  if (user && !blockRedirectRef.current) {
+  // Redirect when user is authenticated
+  if (user) {
     if (user.user_metadata?.pending_setup) return <Navigate to="/setup-account" replace />;
     return <Navigate to="/" replace />;
   }
@@ -50,46 +49,42 @@ const Login = () => {
 
     setError(null);
     setSubmitting(true);
-    blockRedirectRef.current = true;
 
-    // First validate credentials
-    const { error: signInError } = await signIn(email, password);
-
-    if (signInError) {
-      blockRedirectRef.current = false;
-      attemptsRef.current += 1;
-      if (attemptsRef.current >= MAX_ATTEMPTS) {
-        setLocked(true);
-        setError("Too many failed attempts. Please wait 1 minute before trying again.");
-        lockTimerRef.current = setTimeout(() => {
-          setLocked(false);
-          attemptsRef.current = 0;
-          setError(null);
-        }, LOCKOUT_DURATION_MS);
-      } else {
-        setError(`${signInError} (${MAX_ATTEMPTS - attemptsRef.current} attempts remaining)`);
-      }
-      setSubmitting(false);
-      return;
-    }
-
-    // Credentials valid — sign out and send code
-    attemptsRef.current = 0;
-    setSavedEmail(email);
-    setSavedPassword(password);
-    await signOut();
-
-    setSendingCode(true);
     try {
+      // Validate credentials server-side and send code in one call
       const { data, error: fnError } = await supabase.functions.invoke("send-login-code", {
-        body: { email },
+        body: { email, password },
       });
+
       if (fnError) throw fnError;
+
+      if (data?.error) {
+        // Invalid credentials
+        attemptsRef.current += 1;
+        if (attemptsRef.current >= MAX_ATTEMPTS) {
+          setLocked(true);
+          setError("Too many failed attempts. Please wait 1 minute before trying again.");
+          lockTimerRef.current = setTimeout(() => {
+            setLocked(false);
+            attemptsRef.current = 0;
+            setError(null);
+          }, LOCKOUT_DURATION_MS);
+        } else {
+          setError(`${data.error} (${MAX_ATTEMPTS - attemptsRef.current} attempts remaining)`);
+        }
+        setSubmitting(false);
+        return;
+      }
+
+      // Credentials valid, code sent
+      attemptsRef.current = 0;
+      setSavedEmail(email);
+      setSavedPassword(password);
       setStep("code");
     } catch (err: any) {
+      console.error("Login error:", err);
       setError("Failed to send verification code. Please try again.");
     }
-    setSendingCode(false);
     setSubmitting(false);
   };
 
@@ -112,15 +107,15 @@ const Login = () => {
       }
 
       if (data?.verified) {
-        // Code verified — sign in for real, unblock redirect so auth state change triggers navigation
-        blockRedirectRef.current = false;
+        // Code verified — now sign in for real (this is the only sign-in)
         const { error: finalError } = await signIn(savedEmail, savedPassword);
         if (finalError) {
-          blockRedirectRef.current = true;
           setError("Verification succeeded but sign-in failed. Please try again.");
         }
+        // If signIn succeeds, auth state change will set user and redirect will trigger
       }
     } catch (err: any) {
+      console.error("Verification error:", err);
       setError("Verification failed. Please try again.");
     }
     setVerifying(false);
@@ -131,7 +126,7 @@ const Login = () => {
     setSendingCode(true);
     try {
       await supabase.functions.invoke("send-login-code", {
-        body: { email: savedEmail },
+        body: { email: savedEmail, password: savedPassword },
       });
       setError(null);
     } catch {
