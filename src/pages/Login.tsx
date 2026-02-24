@@ -7,6 +7,8 @@ import dexsoraLogo from "@/assets/dexsora-logo.png";
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 60_000;
 
+type Step = "credentials" | "email_code" | "totp";
+
 const Login = () => {
   const { user, loading, signIn } = useAuth();
   const [email, setEmail] = useState("");
@@ -18,7 +20,7 @@ const Login = () => {
   const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 2FA state
-  const [step, setStep] = useState<"credentials" | "code">("credentials");
+  const [step, setStep] = useState<Step>("credentials");
   const [code, setCode] = useState("");
   const [sendingCode, setSendingCode] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -56,7 +58,6 @@ const Login = () => {
     );
   }
 
-  // Redirect when user is authenticated
   if (user) {
     if (user.user_metadata?.pending_setup) return <Navigate to="/setup-account" replace />;
     return <Navigate to="/" replace />;
@@ -74,7 +75,6 @@ const Login = () => {
     setSubmitting(true);
 
     try {
-      // Validate credentials server-side and send code in one call
       const { data, error: fnError } = await supabase.functions.invoke("send-login-code", {
         body: { email, password },
       });
@@ -82,7 +82,6 @@ const Login = () => {
       if (fnError) throw fnError;
 
       if (data?.error) {
-        // Invalid credentials
         attemptsRef.current += 1;
         if (attemptsRef.current >= MAX_ATTEMPTS) {
           setLocked(true);
@@ -99,20 +98,26 @@ const Login = () => {
         return;
       }
 
-      // Credentials valid, code sent
       attemptsRef.current = 0;
       setSavedEmail(email);
       setSavedPassword(password);
-      startCooldown();
-      setStep("code");
+
+      if (data?.mfa === "totp") {
+        // User has TOTP enrolled — show authenticator code input
+        setStep("totp");
+      } else {
+        // Email code was sent
+        startCooldown();
+        setStep("email_code");
+      }
     } catch (err: any) {
       console.error("Login error:", err);
-      setError("Failed to send verification code. Please try again.");
+      setError("Failed to verify credentials. Please try again.");
     }
     setSubmitting(false);
   };
 
-  const handleVerifyCode = async (e: React.FormEvent) => {
+  const handleVerifyEmailCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setVerifying(true);
@@ -131,16 +136,66 @@ const Login = () => {
       }
 
       if (data?.verified) {
-        // Code verified — now sign in for real (this is the only sign-in)
         const { error: finalError } = await signIn(savedEmail, savedPassword);
         if (finalError) {
           setError("Verification succeeded but sign-in failed. Please try again.");
         }
-        // If signIn succeeds, auth state change will set user and redirect will trigger
       }
     } catch (err: any) {
       console.error("Verification error:", err);
       setError("Verification failed. Please try again.");
+    }
+    setVerifying(false);
+  };
+
+  const handleVerifyTotp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setVerifying(true);
+
+    try {
+      // Sign in first to get aal1 session
+      const { error: signInError } = await signIn(savedEmail, savedPassword);
+      if (signInError) {
+        setError("Sign-in failed. Please try again.");
+        setVerifying(false);
+        return;
+      }
+
+      // Now verify TOTP to elevate to aal2
+      const { data: factorsData } = await supabase.auth.mfa.listFactors();
+      const totpFactor = factorsData?.totp?.find((f: any) => f.status === "verified");
+
+      if (!totpFactor) {
+        setError("No authenticator found. Please try again.");
+        await supabase.auth.signOut();
+        setVerifying(false);
+        return;
+      }
+
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: totpFactor.id,
+      });
+      if (challengeError) throw challengeError;
+
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: totpFactor.id,
+        challengeId: challengeData.id,
+        code,
+      });
+
+      if (verifyError) {
+        setError("Invalid authenticator code. Please try again.");
+        await supabase.auth.signOut();
+        setVerifying(false);
+        return;
+      }
+
+      // MFA verified — user will be redirected by the auth state change
+    } catch (err: any) {
+      console.error("TOTP verification error:", err);
+      setError("Authenticator verification failed. Please try again.");
+      try { await supabase.auth.signOut(); } catch {}
     }
     setVerifying(false);
   };
@@ -176,7 +231,7 @@ const Login = () => {
           <img alt="Dexsora" className="h-16 mb-2" src="/lovable-uploads/9a9a6f34-256f-4cf9-a1a2-5b4b3ca9467f.png" />
         </div>
 
-        {step === "credentials" ? (
+        {step === "credentials" && (
           <form onSubmit={handleSubmit} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-6 shadow-xl space-y-4">
             {error && (
               <div className="rounded-lg border border-red-400/30 bg-red-500/15 p-3 text-sm text-red-200">
@@ -216,8 +271,10 @@ const Login = () => {
               {locked ? "Locked — Wait 1 min" : submitting || sendingCode ? "Verifying..." : "Sign In"}
             </button>
           </form>
-        ) : (
-          <form onSubmit={handleVerifyCode} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-6 shadow-xl space-y-4">
+        )}
+
+        {step === "email_code" && (
+          <form onSubmit={handleVerifyEmailCode} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-6 shadow-xl space-y-4">
             <div className="text-center space-y-1">
               <p className="text-sm font-medium text-white">Check your email</p>
               <p className="text-xs text-white/60">
@@ -270,6 +327,53 @@ const Login = () => {
                 {sendingCode ? "Sending..." : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
               </button>
             </div>
+          </form>
+        )}
+
+        {step === "totp" && (
+          <form onSubmit={handleVerifyTotp} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-6 shadow-xl space-y-4">
+            <div className="text-center space-y-1">
+              <p className="text-sm font-medium text-white">Authenticator Code</p>
+              <p className="text-xs text-white/60">
+                Enter the 6-digit code from your authenticator app
+              </p>
+            </div>
+
+            {error && (
+              <div className="rounded-lg border border-red-400/30 bg-red-500/15 p-3 text-sm text-red-200">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-white/70">Authenticator Code</label>
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                required
+                maxLength={6}
+                className="h-12 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-center text-lg font-mono tracking-[0.3em] text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
+                placeholder="000000"
+                autoFocus
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={verifying || code.length !== 6}
+              className="h-10 w-full rounded-lg bg-white text-sm font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {verifying ? "Verifying..." : "Verify & Sign In"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="w-full text-xs text-white/60 hover:text-white transition-colors"
+            >
+              ← Back to login
+            </button>
           </form>
         )}
 
