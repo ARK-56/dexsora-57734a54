@@ -41,11 +41,38 @@ export interface DbLeadDocument {
 }
 
 export const useLeads = () => {
-  const { user, hasAdminAccess, profile } = useAuth();
+  const { user, hasAdminAccess, profile, roles } = useAuth();
   const { currentOrg } = useOrg();
   const { toast } = useToast();
   const [leads, setLeads] = useState<DbLead[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const isMarketingRole = roles.includes("logistics");
+
+  // Fetch user IDs invited by this marketing user
+  const fetchInvitedUserIds = useCallback(async (): Promise<string[]> => {
+    if (!currentOrg || !user) return [];
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-org-members`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ action: "list_invited_user_ids", organizationId: currentOrg.id }),
+        }
+      );
+      const result = await res.json();
+      return result.userIds || [];
+    } catch {
+      return [];
+    }
+  }, [currentOrg, user]);
 
   const fetchLeads = useCallback(async () => {
     if (!user) return;
@@ -60,6 +87,53 @@ export const useLeads = () => {
       await supabase.rpc("cleanup_old_trashed_leads");
     } catch (e) {
       // Ignore if function doesn't exist or fails
+    }
+
+    // If marketing role, only show leads from users they invited
+    if (isMarketingRole && !hasAdminAccess) {
+      const invitedIds = await fetchInvitedUserIds();
+      if (invitedIds.length === 0) {
+        setLeads([]);
+        setLoading(false);
+        return;
+      }
+
+      let query = supabase
+        .from("leads")
+        .select("*")
+        .is("deleted_at", null)
+        .in("submitted_by", invitedIds)
+        .order("created_at", { ascending: false });
+
+      if (currentOrg) {
+        query = query.eq("organization_id", currentOrg.id);
+      }
+
+      const { data: leadsData, error: leadsError } = await query;
+      if (leadsError) {
+        console.error("Error fetching leads:", leadsError);
+        setLoading(false);
+        return;
+      }
+
+      const { data: docsData } = await supabase.from("lead_documents").select("*");
+      const docsMap = new Map<string, DbLeadDocument[]>();
+      (docsData || []).forEach((doc) => {
+        const existing = docsMap.get(doc.lead_id) || [];
+        existing.push(doc);
+        docsMap.set(doc.lead_id, existing);
+      });
+
+      setLeads((leadsData || []).map((lead) => ({
+        ...lead,
+        item: (lead as any).item || null,
+        diagnosis: (lead as any).diagnosis || null,
+        doctor_name: (lead as any).doctor_name || null,
+        doctor_npi: (lead as any).doctor_npi || null,
+        documents: docsMap.get(lead.id) || [],
+      })));
+      setLoading(false);
+      return;
     }
 
     let query = supabase
@@ -104,7 +178,7 @@ export const useLeads = () => {
 
     setLeads(enrichedLeads);
     setLoading(false);
-  }, [user, hasAdminAccess, currentOrg]);
+  }, [user, hasAdminAccess, currentOrg, isMarketingRole, fetchInvitedUserIds]);
 
   useEffect(() => {
     if (!user) return;

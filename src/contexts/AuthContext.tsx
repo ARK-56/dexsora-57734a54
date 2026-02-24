@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -71,6 +71,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // 1-hour auto-logout timer
+  const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const SESSION_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
+
+  const resetLogoutTimer = useCallback(() => {
+    if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+    if (user) {
+      logoutTimerRef.current = setTimeout(async () => {
+        await supabase.auth.signOut();
+      }, SESSION_TIMEOUT_MS);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+      return;
+    }
+
+    resetLogoutTimer();
+
+    const events = ["mousedown", "keydown", "scroll", "touchstart"];
+    const handler = () => resetLogoutTimer();
+    events.forEach((e) => window.addEventListener(e, handler, { passive: true }));
+
+    return () => {
+      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+      events.forEach((e) => window.removeEventListener(e, handler));
+    };
+  }, [user, resetLogoutTimer]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });

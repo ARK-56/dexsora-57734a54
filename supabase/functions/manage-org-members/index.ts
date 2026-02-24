@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
         // Add existing user to org
         const { error: memberError } = await supabaseAdmin
           .from("org_members")
-          .insert({ user_id: existingUser.id, organization_id: organizationId, role });
+          .insert({ user_id: existingUser.id, organization_id: organizationId, role, invited_by: caller.id });
         if (memberError) throw memberError;
 
         return new Response(
@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
       // Add to org_members
       await supabaseAdmin
         .from("org_members")
-        .insert({ user_id: newUser.user.id, organization_id: organizationId, role });
+        .insert({ user_id: newUser.user.id, organization_id: organizationId, role, invited_by: caller.id });
 
       // Update NPI if provided
       if (npi) {
@@ -241,10 +241,33 @@ Deno.serve(async (req) => {
       });
       if (!belongs) throw new Error("Not a member of this organization");
 
-      const { data: members, error } = await supabaseAdmin
+      // Check if caller is a logistics (marketing) member
+      const { data: callerMembership } = await supabaseAdmin
         .from("org_members")
-        .select("user_id, role, created_at")
+        .select("role")
+        .eq("user_id", caller.id)
+        .eq("organization_id", organizationId)
+        .maybeSingle();
+
+      const callerIsLogistics = callerMembership?.role === "logistics";
+
+      // Check if caller is also org admin/owner
+      const { data: callerIsAdmin } = await supabaseAdmin.rpc("is_org_admin", {
+        _user_id: caller.id,
+        _organization_id: organizationId,
+      });
+
+      let membersQuery = supabaseAdmin
+        .from("org_members")
+        .select("user_id, role, created_at, invited_by")
         .eq("organization_id", organizationId);
+
+      // If logistics member (and NOT also an admin/owner), only show members they invited + themselves
+      if (callerIsLogistics && !callerIsAdmin) {
+        membersQuery = membersQuery.or(`invited_by.eq.${caller.id},user_id.eq.${caller.id}`);
+      }
+
+      const { data: members, error } = await membersQuery;
       if (error) throw error;
 
       // Get profiles for members
@@ -273,6 +296,25 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ members: enriched }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "list_invited_user_ids") {
+      const { organizationId } = payload;
+      if (!organizationId) throw new Error("Missing organizationId");
+
+      const { data: members, error } = await supabaseAdmin
+        .from("org_members")
+        .select("user_id")
+        .eq("organization_id", organizationId)
+        .eq("invited_by", caller.id);
+      if (error) throw error;
+
+      const userIds = (members || []).map((m: any) => m.user_id);
+
+      return new Response(
+        JSON.stringify({ userIds }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
