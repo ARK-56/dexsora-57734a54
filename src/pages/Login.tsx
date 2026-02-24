@@ -24,6 +24,7 @@ const Login = () => {
   const [verifying, setVerifying] = useState(false);
   const [savedEmail, setSavedEmail] = useState("");
   const [savedPassword, setSavedPassword] = useState("");
+  const blockRedirectRef = useRef(false);
 
   if (loading) {
     return (
@@ -33,8 +34,8 @@ const Login = () => {
     );
   }
 
-  // Only redirect if on credentials step (not in the middle of 2FA)
-  if (user && step === "credentials") {
+  // Redirect when user is authenticated and we're not blocking (during credential validation before 2FA)
+  if (user && !blockRedirectRef.current) {
     if (user.user_metadata?.pending_setup) return <Navigate to="/setup-account" replace />;
     return <Navigate to="/" replace />;
   }
@@ -49,11 +50,13 @@ const Login = () => {
 
     setError(null);
     setSubmitting(true);
+    blockRedirectRef.current = true;
 
     // First validate credentials
     const { error: signInError } = await signIn(email, password);
 
     if (signInError) {
+      blockRedirectRef.current = false;
       attemptsRef.current += 1;
       if (attemptsRef.current >= MAX_ATTEMPTS) {
         setLocked(true);
@@ -109,11 +112,11 @@ const Login = () => {
       }
 
       if (data?.verified) {
-        // Code verified — sign in for real, reset step so redirect triggers
-        setStep("credentials");
+        // Code verified — sign in for real, unblock redirect so auth state change triggers navigation
+        blockRedirectRef.current = false;
         const { error: finalError } = await signIn(savedEmail, savedPassword);
         if (finalError) {
-          setStep("code");
+          blockRedirectRef.current = true;
           setError("Verification succeeded but sign-in failed. Please try again.");
         }
       }
