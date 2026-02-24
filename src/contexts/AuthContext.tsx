@@ -54,11 +54,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const isNewUser = userIdRef.current !== session.user.id;
-        setUser(session.user);
+        const shouldUpdateUserState = isNewUser || event === "USER_UPDATED" || event === "PASSWORD_RECOVERY";
+
+        // Ignore focus/token refresh auth events for the same user to prevent UI "reload" on tab switch
+        if (shouldUpdateUserState) {
+          setUser(session.user);
+        }
+
         userIdRef.current = session.user.id;
-        // Only re-fetch on actual sign-in, not token refreshes
-        if (isNewUser || event === "SIGNED_IN") {
-          setTimeout(() => fetchUserData(session.user.id), 0);
+
+        // Only fetch profile/roles when user identity actually changes or profile is explicitly updated
+        if (isNewUser || event === "USER_UPDATED") {
+          setTimeout(() => {
+            fetchUserData(session.user.id);
+          }, 0);
         }
       } else {
         setUser(null);
@@ -70,7 +79,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
+      // Avoid duplicate initial fetch if auth listener already initialized user state
+      if (!userIdRef.current && session?.user) {
         setUser(session.user);
         userIdRef.current = session.user.id;
         fetchUserData(session.user.id);
