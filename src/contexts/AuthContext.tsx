@@ -48,15 +48,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) await fetchUserData(user.id);
   };
 
+  const userIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        const isNewUser = userIdRef.current !== session.user.id;
         setUser(session.user);
-        setTimeout(() => fetchUserData(session.user.id), 0);
+        userIdRef.current = session.user.id;
+        // Only re-fetch on actual sign-in, not token refreshes
+        if (isNewUser || event === "SIGNED_IN") {
+          setTimeout(() => fetchUserData(session.user.id), 0);
+        }
       } else {
         setUser(null);
         setProfile(null);
         setRoles([]);
+        userIdRef.current = null;
       }
       setLoading(false);
     });
@@ -64,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
+        userIdRef.current = session.user.id;
         fetchUserData(session.user.id);
       }
       setLoading(false);
