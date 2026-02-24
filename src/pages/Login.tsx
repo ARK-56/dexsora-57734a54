@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate, Link } from "react-router-dom";
@@ -24,6 +24,29 @@ const Login = () => {
   const [verifying, setVerifying] = useState(false);
   const [savedEmail, setSavedEmail] = useState("");
   const [savedPassword, setSavedPassword] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    };
+  }, []);
+
+  const startCooldown = useCallback(() => {
+    setCooldown(60);
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    cooldownRef.current = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(cooldownRef.current!);
+          cooldownRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
 
   if (loading) {
     return (
@@ -80,6 +103,7 @@ const Login = () => {
       attemptsRef.current = 0;
       setSavedEmail(email);
       setSavedPassword(password);
+      startCooldown();
       setStep("code");
     } catch (err: any) {
       console.error("Login error:", err);
@@ -122,6 +146,7 @@ const Login = () => {
   };
 
   const handleResendCode = async () => {
+    if (cooldown > 0) return;
     setError(null);
     setSendingCode(true);
     try {
@@ -129,6 +154,7 @@ const Login = () => {
         body: { email: savedEmail, password: savedPassword },
       });
       setError(null);
+      startCooldown();
     } catch {
       setError("Failed to resend code.");
     }
@@ -238,10 +264,10 @@ const Login = () => {
               <button
                 type="button"
                 onClick={handleResendCode}
-                disabled={sendingCode}
+                disabled={sendingCode || cooldown > 0}
                 className="text-xs text-white/60 hover:text-white transition-colors disabled:opacity-50"
               >
-                {sendingCode ? "Sending..." : "Resend code"}
+                {sendingCode ? "Sending..." : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
               </button>
             </div>
           </form>
