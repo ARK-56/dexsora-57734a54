@@ -42,12 +42,14 @@ export interface DbLeadDocument {
 
 export const useLeads = () => {
   const { user, hasAdminAccess, profile, roles } = useAuth();
-  const { currentOrg } = useOrg();
+  const { currentOrg, isOrgOwner, isOrgAdmin } = useOrg();
   const { toast } = useToast();
   const [leads, setLeads] = useState<DbLead[]>([]);
   const [loading, setLoading] = useState(true);
 
   const isMarketingRole = roles.includes("logistics");
+  // Org owners/admins should see all org leads even if they don't have an admin-access role
+  const canSeeAllOrgLeads = hasAdminAccess || isOrgOwner || isOrgAdmin;
 
   // Fetch user IDs invited by this marketing user
   const fetchInvitedUserIds = useCallback(async (): Promise<string[]> => {
@@ -90,7 +92,7 @@ export const useLeads = () => {
     }
 
     // If marketing role, only show leads from users they invited
-    if (isMarketingRole && !hasAdminAccess) {
+    if (isMarketingRole && !canSeeAllOrgLeads) {
       const invitedIds = await fetchInvitedUserIds();
       if (invitedIds.length === 0) {
         setLeads([]);
@@ -142,15 +144,15 @@ export const useLeads = () => {
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
-    // Doctors/facility users only see their own leads; admins see all org leads
-    if (!hasAdminAccess && !isMarketingRole) {
+    // Doctors/facility users only see their own leads; org admins/owners & admin roles see all org leads
+    if (!canSeeAllOrgLeads && !isMarketingRole) {
       query = query.eq("submitted_by", user.id);
       if (currentOrg) {
         query = query.eq("organization_id", currentOrg.id);
       }
     } else if (currentOrg) {
       query = query.eq("organization_id", currentOrg.id);
-    } else if (!hasAdminAccess) {
+    } else if (!canSeeAllOrgLeads) {
       query = query.eq("submitted_by", user.id);
     }
 
@@ -183,7 +185,7 @@ export const useLeads = () => {
 
     setLeads(enrichedLeads);
     setLoading(false);
-  }, [user, hasAdminAccess, currentOrg, isMarketingRole, fetchInvitedUserIds]);
+  }, [user, canSeeAllOrgLeads, currentOrg, isMarketingRole, fetchInvitedUserIds]);
 
   useEffect(() => {
     if (!user) return;
@@ -332,7 +334,7 @@ export const useLeads = () => {
     // Scope by organization if user has one
     if (currentOrg) {
       query = query.eq("organization_id", currentOrg.id);
-    } else if (!hasAdminAccess) {
+    } else if (!canSeeAllOrgLeads) {
       query = query.eq("submitted_by", user.id);
     }
 
@@ -355,7 +357,7 @@ export const useLeads = () => {
       doctor_npi: (lead as any).doctor_npi || null,
       documents: docsMap.get(lead.id) || [],
     })) as DbLead[];
-  }, [user, hasAdminAccess, currentOrg]);
+  }, [user, canSeeAllOrgLeads, currentOrg]);
 
   return { leads, loading, createLead, updateLeadStatus, softDeleteLeads, permanentDeleteLeads, restoreLeads, fetchTrashedLeads, refreshLeads: fetchLeads };
 };
