@@ -89,60 +89,14 @@ export const useLeads = () => {
       // Ignore if function doesn't exist or fails
     }
 
-    // If marketing role, only show leads from users they invited
-    if (isMarketingRole && !hasAdminAccess) {
-      const invitedIds = await fetchInvitedUserIds();
-      if (invitedIds.length === 0) {
-        setLeads([]);
-        setLoading(false);
-        return;
-      }
-
-      let query = supabase
-        .from("leads")
-        .select("*")
-        .is("deleted_at", null)
-        .in("submitted_by", invitedIds)
-        .order("created_at", { ascending: false });
-
-      if (currentOrg) {
-        query = query.eq("organization_id", currentOrg.id);
-      }
-
-      const { data: leadsData, error: leadsError } = await query;
-      if (leadsError) {
-        console.error("Error fetching leads:", leadsError);
-        setLoading(false);
-        return;
-      }
-
-      const { data: docsData } = await supabase.from("lead_documents").select("*");
-      const docsMap = new Map<string, DbLeadDocument[]>();
-      (docsData || []).forEach((doc) => {
-        const existing = docsMap.get(doc.lead_id) || [];
-        existing.push(doc);
-        docsMap.set(doc.lead_id, existing);
-      });
-
-      setLeads((leadsData || []).map((lead) => ({
-        ...lead,
-        item: (lead as any).item || null,
-        diagnosis: (lead as any).diagnosis || null,
-        doctor_name: (lead as any).doctor_name || null,
-        doctor_npi: (lead as any).doctor_npi || null,
-        documents: docsMap.get(lead.id) || [],
-      })));
-      setLoading(false);
-      return;
-    }
-
     let query = supabase
       .from("leads")
       .select("*")
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
-    // Doctors/facility users only see their own leads; admins see all org leads
+    // Marketing (logistics) role sees all org leads (read-only); admins see all org leads;
+    // Doctors/facility users only see their own leads
     if (!hasAdminAccess && !isMarketingRole) {
       query = query.eq("submitted_by", user.id);
       if (currentOrg) {
@@ -150,7 +104,7 @@ export const useLeads = () => {
       }
     } else if (currentOrg) {
       query = query.eq("organization_id", currentOrg.id);
-    } else if (!hasAdminAccess) {
+    } else if (!hasAdminAccess && !isMarketingRole) {
       query = query.eq("submitted_by", user.id);
     }
 
