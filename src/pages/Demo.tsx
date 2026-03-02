@@ -87,12 +87,9 @@ const Demo = () => {
         )}
       </main>
 
-      {/* Footer - matches app branding pill */}
+      {/* Footer */}
       <footer className="border-t border-border px-6 py-4 flex items-center justify-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full swoosh-gradient px-3.5 py-1.5 text-[11px] font-medium text-primary-foreground shadow-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground animate-pulse" />
-          Powered by Squad Tech Solution
-        </span>
+        <span className="text-xs text-muted-foreground">© {new Date().getFullYear()} Dexsora — All rights reserved</span>
       </footer>
     </div>
   );
