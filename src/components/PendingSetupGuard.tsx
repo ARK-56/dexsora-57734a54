@@ -3,7 +3,7 @@ import { useOrg } from "@/contexts/OrgContext";
 import { Navigate, useLocation } from "react-router-dom";
 
 // Routes that don't require a plan/org to be set up
-const PUBLIC_ROUTES = ["/login", "/signup", "/pricing", "/onboarding", "/setup-account", "/checkout-success"];
+const PUBLIC_ROUTES = ["/login", "/signup", "/pricing", "/onboarding", "/setup-account", "/checkout-success", "/demo"];
 
 const PendingSetupGuard = ({ children }: { children: React.ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
