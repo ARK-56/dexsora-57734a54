@@ -59,6 +59,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
   const [orgInsurances, setOrgInsurances] = useState<OrgInsurance[]>([]);
   const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
   const [insuranceDropdownOpen, setInsuranceDropdownOpen] = useState(false);
+  const [isOtherItem, setIsOtherItem] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !currentOrg) return;
@@ -173,6 +174,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
 
     onSubmit({ ...sanitizedForm, documents: uploadedDocs });
     setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", diagnosis: "", insurance: "" });
+    setIsOtherItem(false);
     setDobDate(undefined);
     setFiles([]);
     setUploading(false);
@@ -294,8 +296,8 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                       onClick={() => setItemDropdownOpen(!itemDropdownOpen)}
                       className="flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
                     >
-                      <span className={form.item ? "text-foreground" : "text-muted-foreground/60"}>
-                        {form.item || "Select item"}
+                      <span className={form.item || isOtherItem ? "text-foreground" : "text-muted-foreground/60"}>
+                        {isOtherItem ? "Other" : form.item || "Select item"}
                       </span>
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     </button>
@@ -303,31 +305,49 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setItemDropdownOpen(false)} />
                         <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
-                          {orgItems.length === 0 ? (
-                            <div className="px-3 py-4 text-xs text-muted-foreground text-center italic">
-                              No items configured by your admin
-                            </div>
-                          ) : (
-                            orgItems.map((item) => (
-                              <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => {
-                                  setForm((p) => ({ ...p, item: item.name }));
-                                  setItemDropdownOpen(false);
-                                }}
-                                className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${
-                                  form.item === item.name ? "bg-primary/10 text-primary font-medium" : "text-foreground"
-                                }`}
-                              >
-                                {item.name}
-                              </button>
-                            ))
-                          )}
+                          {orgItems.map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => {
+                                setForm((p) => ({ ...p, item: item.name }));
+                                setIsOtherItem(false);
+                                setItemDropdownOpen(false);
+                              }}
+                              className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${
+                                form.item === item.name && !isOtherItem ? "bg-primary/10 text-primary font-medium" : "text-foreground"
+                              }`}
+                            >
+                              {item.name}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setForm((p) => ({ ...p, item: "" }));
+                              setIsOtherItem(true);
+                              setItemDropdownOpen(false);
+                            }}
+                            className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors border-t border-border ${
+                              isOtherItem ? "bg-primary/10 text-primary font-medium" : "text-foreground"
+                            }`}
+                          >
+                            Other
+                          </button>
                         </div>
                       </>
                     )}
                   </div>
+                  {isOtherItem && (
+                    <input
+                      type="text"
+                      value={form.item}
+                      onChange={(e) => setForm((p) => ({ ...p, item: e.target.value }))}
+                      placeholder="Enter product name"
+                      required
+                      className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/60"
+                    />
+                  )}
                   {/* Hidden required input for form validation */}
                   <input type="text" value={form.item} required className="sr-only" tabIndex={-1} onChange={() => {}} />
                 </div>
