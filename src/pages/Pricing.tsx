@@ -54,7 +54,7 @@ const Pricing = () => {
     if (user) {
       navigate(`/onboarding?plan=${priceKey}`);
     } else {
-      navigate(`/signup?plan=${priceKey}`);
+      navigate(`/login`);
     }
   };
 
@@ -63,7 +63,7 @@ const Pricing = () => {
     if (user) {
       navigate("/onboarding");
     } else {
-      navigate("/signup");
+      navigate("/login");
     }
   };
 
