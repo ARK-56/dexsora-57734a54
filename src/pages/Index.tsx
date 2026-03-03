@@ -10,8 +10,8 @@ import { LifecycleBar } from "@/components/LifecycleBar";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { InlinePrescriptions } from "@/components/InlinePrescriptions";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
-import { Filter, Trash2 } from "lucide-react";
+import { Navigate, Link } from "react-router-dom";
+import { Filter, Trash2, Play } from "lucide-react";
 import { useLeads, DbLead } from "@/hooks/useLeads";
 
 const Index = () => {
@@ -274,6 +274,16 @@ const Index = () => {
         onPermanentDelete={handlePermanentDelete}
         canPermanentDelete={false}
       />
+
+      {/* Demo video pill */}
+      <Link
+        to="/demo"
+        target="_blank"
+        className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full swoosh-gradient px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:scale-105 hover:shadow-xl"
+      >
+        <Play className="h-4 w-4 fill-current" />
+        Watch Demo
+      </Link>
     </div>
   );
 };
