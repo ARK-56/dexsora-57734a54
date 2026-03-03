@@ -377,12 +377,6 @@ const Login = () => {
           </form>
         )}
 
-        <p className="mt-6 text-center text-xs text-white/40">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-white/80 underline hover:text-white transition-colors">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
   );
