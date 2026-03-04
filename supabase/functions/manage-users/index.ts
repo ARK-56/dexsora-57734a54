@@ -261,6 +261,9 @@ Deno.serve(async (req) => {
 
       const { data: userProfile } = await supabaseAdmin.from("profiles").select("full_name, email").eq("user_id", userId).single();
 
+      // Ban user first to immediately invalidate all active sessions/tokens
+      await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: '876600h' });
+
       await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
       await supabaseAdmin.from("profiles").delete().eq("user_id", userId);
       const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
