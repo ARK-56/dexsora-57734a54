@@ -62,26 +62,40 @@ export const InlinePrescriptions = () => {
           </span>
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[80vw] w-[80vw] max-h-[80vh]">
+      <DialogContent className="sm:max-w-[80vw] w-[80vw] max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             Prescriptions
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+        <div className="sticky top-0 z-10 bg-popover pb-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search prescriptions..."
+              className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+            />
+          </div>
+        </div>
+        <div className="space-y-2 overflow-y-auto flex-1">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Available ({prescriptions.length})
+            Available ({filtered.length})
           </h3>
           {loading ? (
             <div className="flex justify-center py-6">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
             </div>
-          ) : prescriptions.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic py-8 text-center">No prescriptions yet</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic py-8 text-center">
+              {search ? "No prescriptions match your search" : "No prescriptions yet"}
+            </p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {prescriptions.map((p) => (
+              {filtered.map((p) => (
                 <div key={p.id} className="flex flex-col items-center gap-2 rounded-xl border border-border p-4 transition-all hover:bg-muted/30 hover:border-primary/30 group">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
                     <FileText className="h-6 w-6" />
