@@ -25,6 +25,7 @@ export const InlinePrescriptions = () => {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const fetchPrescriptions = async () => {
     setLoading(true);
@@ -45,6 +46,10 @@ export const InlinePrescriptions = () => {
   useEffect(() => {
     fetchPrescriptions();
   }, [currentOrg?.id]);
+
+  const filtered = prescriptions.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
