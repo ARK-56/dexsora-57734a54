@@ -165,6 +165,27 @@ const OrgSettings = () => {
     setResendingId(null);
   };
 
+  const handleDoctorClick = async (member: OrgMember) => {
+    if (member.role !== "doctor" || (!isOrgOwner && !isOrgAdmin)) return;
+    setSelectedDoctor(member);
+    setLoadingLeads(true);
+    try {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("id, patient_name, status, created_at, medicare_id, insurance, item")
+        .eq("submitted_by", member.user_id)
+        .eq("organization_id", currentOrg!.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setDoctorLeads(data || []);
+    } catch (err: any) {
+      console.error("Failed to fetch doctor leads:", err);
+      setDoctorLeads([]);
+    }
+    setLoadingLeads(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
