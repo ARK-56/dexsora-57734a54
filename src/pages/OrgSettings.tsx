@@ -15,6 +15,7 @@ interface OrgMember {
   email: string | null;
   npi: string | null;
   is_owner: boolean;
+  pending_setup: boolean;
 }
 
 const INVITE_ROLES = [
