@@ -447,6 +447,59 @@ const OrgSettings = () => {
           </div>
         </>
       )}
+
+      {/* Doctor Leads Drawer */}
+      {selectedDoctor && (
+        <>
+          <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm" onClick={() => setSelectedDoctor(null)} />
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg border-l border-border bg-card shadow-2xl animate-fade-in overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <h2 className="font-display text-lg font-bold text-foreground">
+                  {selectedDoctor.full_name || selectedDoctor.email}'s Leads
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {doctorLeads.length} lead{doctorLeads.length !== 1 ? "s" : ""} submitted
+                </p>
+              </div>
+              <button onClick={() => setSelectedDoctor(null)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted">
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {loadingLeads ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+                </div>
+              ) : doctorLeads.length === 0 ? (
+                <div className="py-12 text-center">
+                  <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">No leads submitted by this doctor yet.</p>
+                </div>
+              ) : (
+                doctorLeads.map((lead) => (
+                  <div key={lead.id} className="rounded-xl border border-border bg-background p-4 space-y-2 hover:border-primary/30 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-foreground">{lead.patient_name}</p>
+                      <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                        {lead.status}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span>Medicare: {lead.medicare_id}</span>
+                      {lead.insurance && <span>Insurance: {lead.insurance}</span>}
+                      {lead.item && <span>Item: {lead.item}</span>}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground/70">
+                      Submitted {new Date(lead.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
