@@ -52,6 +52,7 @@ const OrgSettings = () => {
   const [inviting, setInviting] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<OrgMember | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const callOrgApi = useCallback(async (body: any) => {
     const { data: sessionData } = await supabase.auth.getSession();
