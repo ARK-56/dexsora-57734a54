@@ -43,12 +43,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check if user has TOTP MFA enrolled
-    const { data: factorsData } = await tempClient.auth.mfa.listFactors();
-    const hasTotp = factorsData?.totp?.some((f: any) => f.status === "verified") || false;
+    const userId = signInData.user.id;
 
     // Sign out the server-side session immediately
     await tempClient.auth.signOut();
+
+    // Check if user has TOTP MFA enrolled using admin API (more reliable)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: adminFactors, error: factorsError } = await supabaseAdmin.auth.admin.mfa.listFactors({
+      userId,
+    });
+
+    const hasTotp = !factorsError && adminFactors?.factors?.some((f: any) => f.factor_type === "totp" && f.status === "verified");
 
     // If TOTP is enrolled, don't send email code — client will handle TOTP
     if (hasTotp) {
@@ -56,9 +62,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const userId = signInData.user.id;
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Clean up old codes for this user
     await supabaseAdmin
