@@ -277,6 +277,13 @@ Deno.serve(async (req) => {
         .select("user_id, full_name, email, npi")
         .in("user_id", userIds);
 
+      // Get pending_setup status from auth users
+      const { data: allUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const userMetaMap = new Map<string, boolean>();
+      (allUsers?.users || []).forEach((u: any) => {
+        userMetaMap.set(u.id, !!u.user_metadata?.pending_setup);
+      });
+
       const { data: org } = await supabaseAdmin
         .from("organizations")
         .select("owner_id")
@@ -291,6 +298,7 @@ Deno.serve(async (req) => {
           email: profile?.email || null,
           npi: profile?.npi || null,
           is_owner: org?.owner_id === m.user_id,
+          pending_setup: userMetaMap.get(m.user_id) ?? false,
         };
       });
 
