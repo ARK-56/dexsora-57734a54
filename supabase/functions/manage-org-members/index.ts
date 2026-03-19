@@ -308,6 +308,44 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (action === "resend_invite") {
+      const { userId, organizationId } = payload;
+      if (!userId || !organizationId) throw new Error("Missing required fields");
+
+      const { data: isOwner } = await supabaseAdmin.rpc("is_org_owner", {
+        _user_id: caller.id, _organization_id: organizationId,
+      });
+      const { data: isOrgAdminRes } = await supabaseAdmin.rpc("is_org_admin", {
+        _user_id: caller.id, _organization_id: organizationId,
+      });
+      if (!isOwner && !isOrgAdminRes) throw new Error("Only org admins can resend invites");
+
+      const { data: targetUser, error: userErr } = await supabaseAdmin.auth.admin.getUserById(userId);
+      if (userErr || !targetUser?.user) throw new Error("User not found");
+      if (!targetUser.user.user_metadata?.pending_setup) throw new Error("This user has already completed setup");
+
+      const email = targetUser.user.email!;
+      const { data: org } = await supabaseAdmin
+        .from("organizations").select("name").eq("id", organizationId).single();
+      if (!org) throw new Error("Organization not found");
+
+      const { data: membership } = await supabaseAdmin
+        .from("org_members").select("role").eq("user_id", userId).eq("organization_id", organizationId).maybeSingle();
+      const role = membership?.role || "doctor";
+
+      const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink", email,
+        options: { redirectTo: `${getSetupBaseUrl()}/setup-account` },
+      });
+      const setupUrl = linkData?.properties?.action_link || `${getSetupBaseUrl()}/setup-account`;
+      await sendOrgInviteEmail(email, org.name, role, setupUrl);
+
+      return new Response(
+        JSON.stringify({ message: "Invitation resent" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "list_invited_user_ids") {
       const { organizationId } = payload;
       if (!organizationId) throw new Error("Missing organizationId");
