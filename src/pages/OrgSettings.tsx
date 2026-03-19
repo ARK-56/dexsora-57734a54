@@ -267,7 +267,11 @@ const OrgSettings = () => {
               </thead>
               <tbody className="divide-y divide-border">
                 {members.map((m) => (
-                  <tr key={m.user_id} className="hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={m.user_id}
+                    className={`hover:bg-muted/30 transition-colors ${m.role === "doctor" && (isOrgOwner || isOrgAdmin) ? "cursor-pointer" : ""}`}
+                    onClick={() => m.role === "doctor" && (isOrgOwner || isOrgAdmin) && handleDoctorClick(m)}
+                  >
                     <td className="px-6 py-3.5">
                       <p className="text-sm font-semibold text-foreground">
                         {m.full_name || "—"}
