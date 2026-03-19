@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, UserPlus, Building2, Trash2, X, Stethoscope, Users, Plus, Package, ShieldCheck, Send, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, UserPlus, Building2, Trash2, X, Stethoscope, Users, Plus, Package, ShieldCheck, Send, CheckCircle, Clock, FileText, Eye } from "lucide-react";
 
 interface OrgMember {
   user_id: string;
@@ -53,6 +53,9 @@ const OrgSettings = () => {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<OrgMember | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<OrgMember | null>(null);
+  const [doctorLeads, setDoctorLeads] = useState<any[]>([]);
+  const [loadingLeads, setLoadingLeads] = useState(false);
 
   const callOrgApi = useCallback(async (body: any) => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -162,6 +165,27 @@ const OrgSettings = () => {
     setResendingId(null);
   };
 
+  const handleDoctorClick = async (member: OrgMember) => {
+    if (member.role !== "doctor" || (!isOrgOwner && !isOrgAdmin)) return;
+    setSelectedDoctor(member);
+    setLoadingLeads(true);
+    try {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("id, patient_name, status, created_at, medicare_id, insurance, item")
+        .eq("submitted_by", member.user_id)
+        .eq("organization_id", currentOrg!.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setDoctorLeads(data || []);
+    } catch (err: any) {
+      console.error("Failed to fetch doctor leads:", err);
+      setDoctorLeads([]);
+    }
+    setLoadingLeads(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -243,7 +267,11 @@ const OrgSettings = () => {
               </thead>
               <tbody className="divide-y divide-border">
                 {members.map((m) => (
-                  <tr key={m.user_id} className="hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={m.user_id}
+                    className={`hover:bg-muted/30 transition-colors ${m.role === "doctor" && (isOrgOwner || isOrgAdmin) ? "cursor-pointer" : ""}`}
+                    onClick={() => m.role === "doctor" && (isOrgOwner || isOrgAdmin) && handleDoctorClick(m)}
+                  >
                     <td className="px-6 py-3.5">
                       <p className="text-sm font-semibold text-foreground">
                         {m.full_name || "—"}
@@ -415,6 +443,59 @@ const OrgSettings = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Doctor Leads Drawer */}
+      {selectedDoctor && (
+        <>
+          <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm" onClick={() => setSelectedDoctor(null)} />
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg border-l border-border bg-card shadow-2xl animate-fade-in overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <h2 className="font-display text-lg font-bold text-foreground">
+                  {selectedDoctor.full_name || selectedDoctor.email}'s Leads
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {doctorLeads.length} lead{doctorLeads.length !== 1 ? "s" : ""} submitted
+                </p>
+              </div>
+              <button onClick={() => setSelectedDoctor(null)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted">
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {loadingLeads ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+                </div>
+              ) : doctorLeads.length === 0 ? (
+                <div className="py-12 text-center">
+                  <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">No leads submitted by this doctor yet.</p>
+                </div>
+              ) : (
+                doctorLeads.map((lead) => (
+                  <div key={lead.id} className="rounded-xl border border-border bg-background p-4 space-y-2 hover:border-primary/30 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-foreground">{lead.patient_name}</p>
+                      <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                        {lead.status}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span>Medicare: {lead.medicare_id}</span>
+                      {lead.insurance && <span>Insurance: {lead.insurance}</span>}
+                      {lead.item && <span>Item: {lead.item}</span>}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground/70">
+                      Submitted {new Date(lead.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </>
