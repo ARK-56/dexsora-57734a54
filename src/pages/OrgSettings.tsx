@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, UserPlus, Building2, Trash2, X, Stethoscope, Users, Plus, Package, ShieldCheck } from "lucide-react";
+import { ArrowLeft, UserPlus, Building2, Trash2, X, Stethoscope, Users, Plus, Package, ShieldCheck, Send, CheckCircle, Clock } from "lucide-react";
 
 interface OrgMember {
   user_id: string;
@@ -15,6 +15,7 @@ interface OrgMember {
   email: string | null;
   npi: string | null;
   is_owner: boolean;
+  pending_setup: boolean;
 }
 
 const INVITE_ROLES = [
@@ -51,6 +52,7 @@ const OrgSettings = () => {
   const [inviting, setInviting] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<OrgMember | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const callOrgApi = useCallback(async (body: any) => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -145,6 +147,21 @@ const OrgSettings = () => {
     setRemovingId(null);
   };
 
+  const handleResendInvite = async (member: OrgMember) => {
+    setResendingId(member.user_id);
+    try {
+      await callOrgApi({
+        action: "resend_invite",
+        userId: member.user_id,
+        organizationId: currentOrg!.id,
+      });
+      toast({ title: "Invitation resent", description: `A new invitation has been sent to ${member.email}.` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setResendingId(null);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -216,9 +233,10 @@ const OrgSettings = () => {
                 <tr className="swoosh-gradient">
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Member</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">NPI</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/90">Joined</th>
-                  {isOrgOwner && (
+                  {(isOrgOwner || isOrgAdmin) && (
                     <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-white/90">Actions</th>
                   )}
                 </tr>
@@ -242,21 +260,49 @@ const OrgSettings = () => {
                         {formatRole(m.role)}
                       </span>
                     </td>
+                    <td className="px-6 py-3.5">
+                      {m.pending_setup ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                          <Clock className="h-3 w-3" />
+                          Pending Setup
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-600 dark:text-green-400">
+                          <CheckCircle className="h-3 w-3" />
+                          Active
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-3.5 text-sm text-muted-foreground">{m.npi || "—"}</td>
                     <td className="px-6 py-3.5 text-sm text-muted-foreground">
                       {new Date(m.created_at).toLocaleDateString()}
                     </td>
-                    {isOrgOwner && (
+                    {(isOrgOwner || isOrgAdmin) && (
                       <td className="px-6 py-3.5 text-right">
-                        {!m.is_owner && (
-                          <button
-                            onClick={() => setConfirmRemove(m)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-destructive/30 hover:bg-destructive/10 transition-colors"
-                            title="Remove member"
-                          >
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </button>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {m.pending_setup && !m.is_owner && (
+                            <button
+                              onClick={() => handleResendInvite(m)}
+                              disabled={resendingId === m.user_id}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-primary/30 px-2.5 hover:bg-primary/10 transition-colors disabled:opacity-50"
+                              title="Resend invitation"
+                            >
+                              <Send className="h-3.5 w-3.5 text-primary" />
+                              <span className="text-xs font-medium text-primary">
+                                {resendingId === m.user_id ? "Sending..." : "Resend"}
+                              </span>
+                            </button>
+                          )}
+                          {!m.is_owner && isOrgOwner && (
+                            <button
+                              onClick={() => setConfirmRemove(m)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-destructive/30 hover:bg-destructive/10 transition-colors"
+                              title="Remove member"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
