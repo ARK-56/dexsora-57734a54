@@ -147,6 +147,21 @@ const OrgSettings = () => {
     setRemovingId(null);
   };
 
+  const handleResendInvite = async (member: OrgMember) => {
+    setResendingId(member.user_id);
+    try {
+      await callOrgApi({
+        action: "resend_invite",
+        userId: member.user_id,
+        organizationId: currentOrg!.id,
+      });
+      toast({ title: "Invitation resent", description: `A new invitation has been sent to ${member.email}.` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setResendingId(null);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
