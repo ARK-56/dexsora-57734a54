@@ -414,6 +414,58 @@ const Login = () => {
           </form>
         )}
 
+        {step === "forgot_password" && (
+          <form onSubmit={handleForgotPassword} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-6 shadow-xl space-y-4">
+            <div className="text-center space-y-1">
+              <p className="text-lg font-medium text-white">Reset Password</p>
+              <p className="text-base text-white/60">
+                Enter your email and we'll send you a reset link
+              </p>
+            </div>
+
+            {error && (
+              <div className="rounded-lg border border-red-400/30 bg-red-500/15 p-3 text-base text-red-200">
+                {error}
+              </div>
+            )}
+
+            {forgotSuccess && (
+              <div className="rounded-lg border border-green-400/30 bg-green-500/15 p-3 text-base text-green-200">
+                Check your email for the password reset link.
+              </div>
+            )}
+
+            <div>
+              <label className="mb-1.5 block text-base font-medium text-white/70">Email</label>
+              <input
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                required
+                disabled={forgotSuccess}
+                className="h-10 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-lg text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30 disabled:opacity-50"
+                placeholder="you@company.com"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={forgotSubmitting || forgotSuccess || !forgotEmail}
+              className="h-10 w-full rounded-lg bg-white text-lg font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {forgotSubmitting ? "Sending..." : forgotSuccess ? "Email Sent" : "Send Reset Link"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="w-full text-base text-white/60 hover:text-white transition-colors"
+            >
+              ← Back to login
+            </button>
+          </form>
+        )}
+
       </div>
     </div>
   );
