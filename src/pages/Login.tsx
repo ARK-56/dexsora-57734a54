@@ -7,7 +7,7 @@ import dexsoraLogo from "@/assets/dexsora-logo.png";
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 60_000;
 
-type Step = "credentials" | "email_code" | "totp";
+type Step = "credentials" | "email_code" | "totp" | "forgot_password";
 
 const Login = () => {
   const { user, loading, signIn } = useAuth();
@@ -28,6 +28,11 @@ const Login = () => {
   const [savedPassword, setSavedPassword] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Forgot password state
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -222,6 +227,28 @@ const Login = () => {
     setError(null);
     setSavedEmail("");
     setSavedPassword("");
+    setForgotEmail("");
+    setForgotSuccess(false);
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setForgotSubmitting(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setForgotSuccess(true);
+    } catch (err: any) {
+      console.error("Password reset error:", err);
+      setError("Failed to send reset email. Please try again.");
+    }
+    setForgotSubmitting(false);
   };
 
   return (
@@ -270,6 +297,16 @@ const Login = () => {
             >
               {locked ? "Locked — Wait 1 min" : submitting || sendingCode ? "Verifying..." : "Sign In"}
             </button>
+
+            <div className="flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => setStep("forgot_password")}
+                className="text-base text-white/60 hover:text-white transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
           </form>
         )}
 
@@ -371,6 +408,58 @@ const Login = () => {
               type="button"
               onClick={handleBackToLogin}
               className="w-full text-sm text-white/60 hover:text-white transition-colors"
+            >
+              ← Back to login
+            </button>
+          </form>
+        )}
+
+        {step === "forgot_password" && (
+          <form onSubmit={handleForgotPassword} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-6 shadow-xl space-y-4">
+            <div className="text-center space-y-1">
+              <p className="text-lg font-medium text-white">Reset Password</p>
+              <p className="text-base text-white/60">
+                Enter your email and we'll send you a reset link
+              </p>
+            </div>
+
+            {error && (
+              <div className="rounded-lg border border-red-400/30 bg-red-500/15 p-3 text-base text-red-200">
+                {error}
+              </div>
+            )}
+
+            {forgotSuccess && (
+              <div className="rounded-lg border border-green-400/30 bg-green-500/15 p-3 text-base text-green-200">
+                Check your email for the password reset link.
+              </div>
+            )}
+
+            <div>
+              <label className="mb-1.5 block text-base font-medium text-white/70">Email</label>
+              <input
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                required
+                disabled={forgotSuccess}
+                className="h-10 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-lg text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30 disabled:opacity-50"
+                placeholder="you@company.com"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={forgotSubmitting || forgotSuccess || !forgotEmail}
+              className="h-10 w-full rounded-lg bg-white text-lg font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {forgotSubmitting ? "Sending..." : forgotSuccess ? "Email Sent" : "Send Reset Link"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="w-full text-base text-white/60 hover:text-white transition-colors"
             >
               ← Back to login
             </button>
