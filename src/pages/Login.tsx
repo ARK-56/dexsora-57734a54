@@ -240,25 +240,25 @@ const Login = () => {
             )}
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70">Email</label>
+              <label className="mb-1.5 block text-sm font-medium text-white/70">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-10 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-sm text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
+                className="h-10 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-base text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
                 placeholder="you@company.com"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70">Password</label>
+              <label className="mb-1.5 block text-sm font-medium text-white/70">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-10 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-sm text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
+                className="h-10 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-base text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
                 placeholder="••••••••"
               />
             </div>
@@ -266,7 +266,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={submitting || locked || sendingCode}
-              className="h-10 w-full rounded-lg bg-white text-sm font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="h-10 w-full rounded-lg bg-white text-base font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {locked ? "Locked — Wait 1 min" : submitting || sendingCode ? "Verifying..." : "Sign In"}
             </button>
@@ -276,8 +276,8 @@ const Login = () => {
         {step === "email_code" && (
           <form onSubmit={handleVerifyEmailCode} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-6 shadow-xl space-y-4">
             <div className="text-center space-y-1">
-              <p className="text-sm font-medium text-white">Check your email</p>
-              <p className="text-xs text-white/60">
+              <p className="text-base font-medium text-white">Check your email</p>
+              <p className="text-sm text-white/60">
                 We sent a 6-digit code to <span className="font-medium text-white/80">{savedEmail}</span>
               </p>
             </div>
@@ -289,14 +289,14 @@ const Login = () => {
             )}
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70">Verification Code</label>
+              <label className="mb-1.5 block text-sm font-medium text-white/70">Verification Code</label>
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 required
                 maxLength={6}
-                className="h-12 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-center text-lg font-mono tracking-[0.3em] text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
+                className="h-12 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-center text-xl font-mono tracking-[0.3em] text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
                 placeholder="000000"
                 autoFocus
               />
@@ -305,7 +305,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={verifying || code.length !== 6}
-              className="h-10 w-full rounded-lg bg-white text-sm font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="h-10 w-full rounded-lg bg-white text-base font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {verifying ? "Verifying..." : "Verify & Sign In"}
             </button>
@@ -314,7 +314,7 @@ const Login = () => {
               <button
                 type="button"
                 onClick={handleBackToLogin}
-                className="text-xs text-white/60 hover:text-white transition-colors"
+                className="text-sm text-white/60 hover:text-white transition-colors"
               >
                 ← Back to login
               </button>
@@ -322,7 +322,7 @@ const Login = () => {
                 type="button"
                 onClick={handleResendCode}
                 disabled={sendingCode || cooldown > 0}
-                className="text-xs text-white/60 hover:text-white transition-colors disabled:opacity-50"
+                className="text-sm text-white/60 hover:text-white transition-colors disabled:opacity-50"
               >
                 {sendingCode ? "Sending..." : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
               </button>
@@ -333,8 +333,8 @@ const Login = () => {
         {step === "totp" && (
           <form onSubmit={handleVerifyTotp} className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-6 shadow-xl space-y-4">
             <div className="text-center space-y-1">
-              <p className="text-sm font-medium text-white">Authenticator Code</p>
-              <p className="text-xs text-white/60">
+              <p className="text-base font-medium text-white">Authenticator Code</p>
+              <p className="text-sm text-white/60">
                 Enter the 6-digit code from your authenticator app
               </p>
             </div>
@@ -346,14 +346,14 @@ const Login = () => {
             )}
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70">Authenticator Code</label>
+              <label className="mb-1.5 block text-sm font-medium text-white/70">Authenticator Code</label>
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 required
                 maxLength={6}
-                className="h-12 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-center text-lg font-mono tracking-[0.3em] text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
+                className="h-12 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-center text-xl font-mono tracking-[0.3em] text-white placeholder:text-white/40 outline-none transition-colors focus:border-white/50 focus:ring-1 focus:ring-white/30"
                 placeholder="000000"
                 autoFocus
               />
@@ -362,7 +362,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={verifying || code.length !== 6}
-              className="h-10 w-full rounded-lg bg-white text-sm font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="h-10 w-full rounded-lg bg-white text-base font-semibold text-[hsl(183,100%,25%)] transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {verifying ? "Verifying..." : "Verify & Sign In"}
             </button>
@@ -370,7 +370,7 @@ const Login = () => {
             <button
               type="button"
               onClick={handleBackToLogin}
-              className="w-full text-xs text-white/60 hover:text-white transition-colors"
+              className="w-full text-sm text-white/60 hover:text-white transition-colors"
             >
               ← Back to login
             </button>
