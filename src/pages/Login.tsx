@@ -7,7 +7,7 @@ import dexsoraLogo from "@/assets/dexsora-logo.png";
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 60_000;
 
-type Step = "credentials" | "email_code" | "totp";
+type Step = "credentials" | "email_code" | "totp" | "forgot_password";
 
 const Login = () => {
   const { user, loading, signIn } = useAuth();
