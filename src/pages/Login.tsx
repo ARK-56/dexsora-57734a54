@@ -297,6 +297,16 @@ const Login = () => {
             >
               {locked ? "Locked — Wait 1 min" : submitting || sendingCode ? "Verifying..." : "Sign In"}
             </button>
+
+            <div className="flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => setStep("forgot_password")}
+                className="text-base text-white/60 hover:text-white transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
           </form>
         )}
 
