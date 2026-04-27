@@ -30,7 +30,8 @@ interface SubmitLeadModalProps {
     item: string;
     diagnosis: string;
     insurance: string;
-    shipTo: "patient" | "doctor";
+    shipTo: "patient" | "doctor" | "other";
+    shipToOther?: string;
     documents: { name: string; url: string }[];
   }) => void;
 }
