@@ -177,9 +177,16 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
       setUploadProgress(Math.round(((i + 1) / files.length) * 100));
     }
 
-    onSubmit({ ...sanitizedForm, shipTo, documents: uploadedDocs });
+    if (shipTo === "other" && !shipToOther.trim()) {
+      toast({ title: "Validation Error", description: "Please enter the shipping address.", variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    onSubmit({ ...sanitizedForm, shipTo, shipToOther: shipTo === "other" ? shipToOther.trim() : undefined, documents: uploadedDocs });
     setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", diagnosis: "", insurance: "" });
     setShipTo("patient");
+    setShipToOther("");
     setIsOtherItem(false);
     setDobDate(undefined);
     setFiles([]);
