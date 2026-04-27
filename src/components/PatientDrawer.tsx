@@ -267,11 +267,19 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
           <Section title="Contact Information">
             <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={lead.phone || "—"} />
             <InfoRow icon={<MapPin className="h-4 w-4" />} label="Address" value={lead.address || "—"} />
-            <InfoRow
-              icon={<Package className="h-4 w-4" />}
-              label="Ship To"
-              value={(lead as any).ship_to === "doctor" ? "Doctor's Address" : "Patient Address"}
-            />
+            {(() => {
+              const st = (lead as any).ship_to as string | null | undefined;
+              let shipValue = "Patient Address";
+              if (st === "doctor") shipValue = "Doctor's Address";
+              else if (st && st.startsWith("other:")) shipValue = `Other: ${st.slice(6) || "—"}`;
+              return (
+                <InfoRow
+                  icon={<Package className="h-4 w-4" />}
+                  label="Ship To"
+                  value={shipValue}
+                />
+              );
+            })()}
           </Section>
 
           {/* Product Info */}
