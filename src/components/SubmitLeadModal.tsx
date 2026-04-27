@@ -30,7 +30,8 @@ interface SubmitLeadModalProps {
     item: string;
     diagnosis: string;
     insurance: string;
-    shipTo: "patient" | "doctor";
+    shipTo: "patient" | "doctor" | "other";
+    shipToOther?: string;
     documents: { name: string; url: string }[];
   }) => void;
 }
@@ -50,7 +51,8 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     diagnosis: "",
     insurance: "",
   });
-  const [shipTo, setShipTo] = useState<"patient" | "doctor">("patient");
+  const [shipTo, setShipTo] = useState<"patient" | "doctor" | "other">("patient");
+  const [shipToOther, setShipToOther] = useState("");
   const [shipToDropdownOpen, setShipToDropdownOpen] = useState(false);
   const [certified, setCertified] = useState(true);
   const [dobDate, setDobDate] = useState<Date | undefined>();
@@ -175,9 +177,16 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
       setUploadProgress(Math.round(((i + 1) / files.length) * 100));
     }
 
-    onSubmit({ ...sanitizedForm, shipTo, documents: uploadedDocs });
+    if (shipTo === "other" && !shipToOther.trim()) {
+      toast({ title: "Validation Error", description: "Please enter the shipping address.", variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    onSubmit({ ...sanitizedForm, shipTo, shipToOther: shipTo === "other" ? shipToOther.trim() : undefined, documents: uploadedDocs });
     setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", diagnosis: "", insurance: "" });
     setShipTo("patient");
+    setShipToOther("");
     setIsOtherItem(false);
     setDobDate(undefined);
     setFiles([]);
@@ -418,7 +427,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                       className="flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
                     >
                       <span className="text-foreground">
-                        {shipTo === "patient" ? "Patient Address" : "Doctor's Address"}
+                        {shipTo === "patient" ? "Patient Address" : shipTo === "doctor" ? "Doctor's Address" : "Other"}
                       </span>
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     </button>
@@ -429,6 +438,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                           {[
                             { value: "patient" as const, label: "Patient Address" },
                             { value: "doctor" as const, label: "Doctor's Address" },
+                            { value: "other" as const, label: "Other" },
                           ].map((opt) => (
                             <button
                               key={opt.value}
@@ -448,6 +458,16 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                       </>
                     )}
                   </div>
+                  {shipTo === "other" && (
+                    <input
+                      type="text"
+                      value={shipToOther}
+                      onChange={(e) => setShipToOther(e.target.value)}
+                      placeholder="Enter shipping address"
+                      required
+                      className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/60"
+                    />
+                  )}
                 </div>
               </div>
             </div>

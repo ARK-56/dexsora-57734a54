@@ -215,7 +215,8 @@ export const useLeads = () => {
     item: string;
     diagnosis: string;
     insurance: string;
-    shipTo?: "patient" | "doctor";
+    shipTo?: "patient" | "doctor" | "other";
+    shipToOther?: string;
     documents: { name: string; url: string }[];
   }) => {
     if (!user) return;
@@ -240,7 +241,7 @@ export const useLeads = () => {
         item: data.item,
         diagnosis: data.diagnosis,
         insurance: data.insurance || null,
-        ship_to: data.shipTo || "patient",
+        ship_to: data.shipTo === "other" ? `other:${data.shipToOther || ""}` : (data.shipTo || "patient"),
         doctor_name: profile?.full_name || "Unknown",
         doctor_npi: profile?.npi || "",
         submitted_by: user.id,
