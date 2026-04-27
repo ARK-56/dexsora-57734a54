@@ -51,7 +51,8 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     diagnosis: "",
     insurance: "",
   });
-  const [shipTo, setShipTo] = useState<"patient" | "doctor">("patient");
+  const [shipTo, setShipTo] = useState<"patient" | "doctor" | "other">("patient");
+  const [shipToOther, setShipToOther] = useState("");
   const [shipToDropdownOpen, setShipToDropdownOpen] = useState(false);
   const [certified, setCertified] = useState(true);
   const [dobDate, setDobDate] = useState<Date | undefined>();
