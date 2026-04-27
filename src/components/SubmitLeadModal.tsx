@@ -30,6 +30,7 @@ interface SubmitLeadModalProps {
     item: string;
     diagnosis: string;
     insurance: string;
+    shipTo: "patient" | "doctor";
     documents: { name: string; url: string }[];
   }) => void;
 }
@@ -49,6 +50,8 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     diagnosis: "",
     insurance: "",
   });
+  const [shipTo, setShipTo] = useState<"patient" | "doctor">("patient");
+  const [shipToDropdownOpen, setShipToDropdownOpen] = useState(false);
   const [certified, setCertified] = useState(true);
   const [dobDate, setDobDate] = useState<Date | undefined>();
   const [files, setFiles] = useState<File[]>([]);
@@ -172,8 +175,9 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
       setUploadProgress(Math.round(((i + 1) / files.length) * 100));
     }
 
-    onSubmit({ ...sanitizedForm, documents: uploadedDocs });
+    onSubmit({ ...sanitizedForm, shipTo, documents: uploadedDocs });
     setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", diagnosis: "", insurance: "" });
+    setShipTo("patient");
     setIsOtherItem(false);
     setDobDate(undefined);
     setFiles([]);
