@@ -30,6 +30,7 @@ interface SubmitLeadModalProps {
     item: string;
     diagnosis: string;
     insurance: string;
+    shipTo: "patient" | "doctor";
     documents: { name: string; url: string }[];
   }) => void;
 }
@@ -49,6 +50,8 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     diagnosis: "",
     insurance: "",
   });
+  const [shipTo, setShipTo] = useState<"patient" | "doctor">("patient");
+  const [shipToDropdownOpen, setShipToDropdownOpen] = useState(false);
   const [certified, setCertified] = useState(true);
   const [dobDate, setDobDate] = useState<Date | undefined>();
   const [files, setFiles] = useState<File[]>([]);
@@ -172,8 +175,9 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
       setUploadProgress(Math.round(((i + 1) / files.length) * 100));
     }
 
-    onSubmit({ ...sanitizedForm, documents: uploadedDocs });
+    onSubmit({ ...sanitizedForm, shipTo, documents: uploadedDocs });
     setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", diagnosis: "", insurance: "" });
+    setShipTo("patient");
     setIsOtherItem(false);
     setDobDate(undefined);
     setFiles([]);
@@ -400,6 +404,50 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                   </div>
                   {/* Hidden required input for form validation */}
                   <input type="text" value={form.insurance} required className="sr-only" tabIndex={-1} onChange={() => {}} />
+                </div>
+
+                {/* Ship To dropdown */}
+                <div className="col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Ship To <span className="text-destructive">*</span>
+                  </label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShipToDropdownOpen(!shipToDropdownOpen)}
+                      className="flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-ring"
+                    >
+                      <span className="text-foreground">
+                        {shipTo === "patient" ? "Patient Address" : "Doctor's Address"}
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    {shipToDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setShipToDropdownOpen(false)} />
+                        <div className="absolute top-full left-0 right-0 z-20 mt-1 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
+                          {[
+                            { value: "patient" as const, label: "Patient Address" },
+                            { value: "doctor" as const, label: "Doctor's Address" },
+                          ].map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => {
+                                setShipTo(opt.value);
+                                setShipToDropdownOpen(false);
+                              }}
+                              className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${
+                                shipTo === opt.value ? "bg-primary/10 text-primary font-medium" : "text-foreground"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

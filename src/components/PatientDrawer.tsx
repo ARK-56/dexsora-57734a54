@@ -267,6 +267,11 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
           <Section title="Contact Information">
             <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={lead.phone || "—"} />
             <InfoRow icon={<MapPin className="h-4 w-4" />} label="Address" value={lead.address || "—"} />
+            <InfoRow
+              icon={<Package className="h-4 w-4" />}
+              label="Ship To"
+              value={(lead as any).ship_to === "doctor" ? "Doctor's Address" : "Patient Address"}
+            />
           </Section>
 
           {/* Product Info */}

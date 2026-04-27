@@ -310,6 +310,7 @@ export type Database = {
           patient_name: string
           phone: string | null
           ppo_id: string | null
+          ship_to: string | null
           status: string
           submitted_by: string | null
           submitted_ip: string | null
@@ -335,6 +336,7 @@ export type Database = {
           patient_name: string
           phone?: string | null
           ppo_id?: string | null
+          ship_to?: string | null
           status?: string
           submitted_by?: string | null
           submitted_ip?: string | null
@@ -360,6 +362,7 @@ export type Database = {
           patient_name?: string
           phone?: string | null
           ppo_id?: string | null
+          ship_to?: string | null
           status?: string
           submitted_by?: string | null
           submitted_ip?: string | null
