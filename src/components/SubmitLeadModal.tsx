@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Upload, FileText, Trash2, CalendarIcon, Loader2, ChevronDown } from "lucide-react";
+import { X, Upload, FileText, Trash2, CalendarIcon, Loader2, ChevronDown, FilePlus } from "lucide-react";
+import { CreateDocumentModal } from "@/components/CreateDocumentModal";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
