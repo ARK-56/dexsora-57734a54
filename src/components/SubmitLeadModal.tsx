@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Upload, FileText, Trash2, CalendarIcon, Loader2, ChevronDown } from "lucide-react";
+import { X, Upload, FileText, Trash2, CalendarIcon, Loader2, ChevronDown, FilePlus } from "lucide-react";
+import { CreateDocumentModal } from "@/components/CreateDocumentModal";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
   const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
   const [insuranceDropdownOpen, setInsuranceDropdownOpen] = useState(false);
   const [isOtherItem, setIsOtherItem] = useState(false);
+  const [createDocOpen, setCreateDocOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !currentOrg) return;
@@ -523,6 +525,27 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
               )}
             </div>
 
+              {/* Create Document button */}
+              <button
+                type="button"
+                onClick={() => setCreateDocOpen(true)}
+                className="flex items-center gap-2 rounded-lg border border-dashed border-primary/50 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10 hover:border-primary w-full justify-center"
+              >
+                <FilePlus className="h-4 w-4" />
+                Create Document
+              </button>
+
+              <CreateDocumentModal
+                isOpen={createDocOpen}
+                onClose={() => setCreateDocOpen(false)}
+                onDocumentCreated={(file) => {
+                  setFiles((prev) => [...prev, file]);
+                }}
+                patientName={form.patientName}
+                dob={form.dob}
+                phone={form.phone}
+                address={[form.address, form.city, form.state, form.zip].filter(Boolean).join(", ")}
+              />
             {/* Upload progress */}
             {uploading && files.length > 0 && (
               <div className="space-y-2">
