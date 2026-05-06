@@ -66,6 +66,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
   const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
   const [insuranceDropdownOpen, setInsuranceDropdownOpen] = useState(false);
   const [isOtherItem, setIsOtherItem] = useState(false);
+  const [createDocOpen, setCreateDocOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !currentOrg) return;
