@@ -369,6 +369,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                   {/* Hidden required input for form validation */}
                   <input type="text" value={form.item} required className="sr-only" tabIndex={-1} onChange={() => {}} />
                 </div>
+                <Field label="HCPC Code" value={form.hcpcCode} onChange={set("hcpcCode")} required placeholder="e.g. E0100" />
                 <Field label="Diagnosis" value={form.diagnosis} onChange={set("diagnosis")} required placeholder="e.g. M17.11" />
 
                 {/* Insurance dropdown */}
