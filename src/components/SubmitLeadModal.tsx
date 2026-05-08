@@ -50,6 +50,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     state: "",
     zip: "",
     item: "",
+    hcpcCode: "",
     diagnosis: "",
     insurance: "",
   });
