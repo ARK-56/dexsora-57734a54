@@ -216,6 +216,7 @@ export const useLeads = () => {
     phone: string;
     address: string;
     item: string;
+    hcpcCode: string;
     diagnosis: string;
     insurance: string;
     shipTo?: "patient" | "doctor" | "other";
