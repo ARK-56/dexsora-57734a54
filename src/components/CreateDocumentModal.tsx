@@ -82,7 +82,7 @@ export const CreateDocumentModal = ({
       // Title
       doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
-      doc.text("Letter of Medical Necessity", pageWidth / 2, y, { align: "center" });
+      doc.text("", pageWidth / 2, y, { align: "center" });
       y += 8;
       doc.setDrawColor(0);
       doc.setLineWidth(0.4);
@@ -93,7 +93,7 @@ export const CreateDocumentModal = ({
       writeWrapped(`Date: ${today}`, { gap: 6 });
 
       writeWrapped(
-        "I am writing to request a medical necessity authorization for gradient compression stockings for my patient.",
+        `I am writing to request a medical necessity authorization for ${product} for my patient.`,
         { gap: 6 }
       );
 
@@ -114,7 +114,7 @@ export const CreateDocumentModal = ({
       // Medical Necessity
       writeWrapped("Medical Necessity:", { bold: true, size: 12, gap: 3 });
       writeWrapped(
-        `Conservative treatments, including leg elevation and exercise, have been attempted for ${conservativeMonths} month(s) but have proven insufficient in managing the patient's symptoms and preventing further complications.`,
+        `Conservative treatments, have been attempted for ${conservativeMonths} month(s) but have proven insufficient in managing the patient's symptoms and preventing further complications.`,
         { gap: 6 }
       );
 
@@ -126,13 +126,13 @@ export const CreateDocumentModal = ({
       if (style.trim()) writeWrapped(`• Style: ${style}`);
       y += 2;
       writeWrapped(
-        "These garments are a vital component of the patient's treatment plan to improve venous return and reduce the risk of complications.",
+        `This ${product} are a vital component of the patient's treatment plan reduce the risk of complications.`,
         { gap: 8 }
       );
 
       // Certification
       writeWrapped(
-        "I certify that the prescribed gradient compression stockings are medically necessary for this patient's treatment and that the clinical information provided is true and accurate to the best of my knowledge.",
+        `I certify that the prescribed ${product} are medically necessary for this patient's treatment and that the clinical information provided is true and accurate to the best of my knowledge.`,
         { gap: 8 }
       );
 
