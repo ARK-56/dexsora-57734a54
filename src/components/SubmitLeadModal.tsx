@@ -549,6 +549,9 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                 dob={form.dob}
                 phone={form.phone}
                 address={[form.address, form.city, form.state, form.zip].filter(Boolean).join(", ")}
+                product={form.item}
+                hcpcCode={form.hcpcCode}
+                diagnosis={form.diagnosis}
               />
             {/* Upload progress */}
             {uploading && files.length > 0 && (
