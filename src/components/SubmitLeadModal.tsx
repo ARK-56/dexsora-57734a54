@@ -135,6 +135,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
       phone: sanitize(form.phone),
       address: [sanitize(form.address), sanitize(form.city), sanitize(form.state), sanitize(form.zip)].filter(Boolean).join(", "),
       item: sanitize(form.item),
+      hcpcCode: sanitize(form.hcpcCode),
       diagnosis: sanitize(form.diagnosis),
       insurance: sanitize(form.insurance),
     };
