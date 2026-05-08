@@ -243,6 +243,7 @@ export const useLeads = () => {
         address: data.address,
         medicare_id: "N/A",
         item: data.item,
+        hcpc_code: data.hcpcCode || null,
         diagnosis: data.diagnosis,
         insurance: data.insurance || null,
         ship_to: data.shipTo === "other" ? `other:${data.shipToOther || ""}` : (data.shipTo || "patient"),
