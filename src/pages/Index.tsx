@@ -62,6 +62,7 @@ const Index = () => {
     phone: string;
     address: string;
     item: string;
+    hcpcCode: string;
     diagnosis: string;
     insurance: string;
     documents: { name: string; url: string }[];
