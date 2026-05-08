@@ -283,9 +283,10 @@ export const PatientDrawer = ({ lead, onClose, currentRole, canUpdateStatus, onU
           </Section>
 
           {/* Product Info */}
-          {(lead.item || lead.diagnosis) && (
+          {(lead.item || lead.diagnosis || lead.hcpc_code) && (
             <Section title="Product Information">
               {lead.item && <InfoRow icon={<Package className="h-4 w-4" />} label="Item" value={lead.item} />}
+              {lead.hcpc_code && <InfoRow icon={<FileText className="h-4 w-4" />} label="HCPC Code" value={lead.hcpc_code} />}
               {lead.diagnosis && <InfoRow icon={<FileText className="h-4 w-4" />} label="Diagnosis" value={lead.diagnosis} />}
             </Section>
           )}

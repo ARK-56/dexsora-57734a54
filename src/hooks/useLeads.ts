@@ -15,6 +15,7 @@ export interface DbLead {
   ppo_id: string | null;
   dme_items: string | null;
   item: string | null;
+  hcpc_code: string | null;
   diagnosis: string | null;
   doctor_name: string | null;
   doctor_npi: string | null;
@@ -130,6 +131,7 @@ export const useLeads = () => {
       setLeads((leadsData || []).map((lead) => ({
         ...lead,
         item: (lead as any).item || null,
+        hcpc_code: (lead as any).hcpc_code || null,
         diagnosis: (lead as any).diagnosis || null,
         doctor_name: (lead as any).doctor_name || null,
         doctor_npi: (lead as any).doctor_npi || null,
@@ -178,6 +180,7 @@ export const useLeads = () => {
     const enrichedLeads: DbLead[] = (leadsData || []).map((lead) => ({
       ...lead,
       item: (lead as any).item || null,
+      hcpc_code: (lead as any).hcpc_code || null,
       diagnosis: (lead as any).diagnosis || null,
       doctor_name: (lead as any).doctor_name || null,
       doctor_npi: (lead as any).doctor_npi || null,
@@ -213,6 +216,7 @@ export const useLeads = () => {
     phone: string;
     address: string;
     item: string;
+    hcpcCode: string;
     diagnosis: string;
     insurance: string;
     shipTo?: "patient" | "doctor" | "other";
@@ -239,6 +243,7 @@ export const useLeads = () => {
         address: data.address,
         medicare_id: "N/A",
         item: data.item,
+        hcpc_code: data.hcpcCode || null,
         diagnosis: data.diagnosis,
         insurance: data.insurance || null,
         ship_to: data.shipTo === "other" ? `other:${data.shipToOther || ""}` : (data.shipTo || "patient"),
@@ -356,6 +361,7 @@ export const useLeads = () => {
     return (leadsData || []).map((lead) => ({
       ...lead,
       item: (lead as any).item || null,
+      hcpc_code: (lead as any).hcpc_code || null,
       diagnosis: (lead as any).diagnosis || null,
       doctor_name: (lead as any).doctor_name || null,
       doctor_npi: (lead as any).doctor_npi || null,

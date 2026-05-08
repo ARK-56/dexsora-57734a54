@@ -29,6 +29,7 @@ interface SubmitLeadModalProps {
     phone: string;
     address: string;
     item: string;
+    hcpcCode: string;
     diagnosis: string;
     insurance: string;
     shipTo: "patient" | "doctor" | "other";
@@ -49,6 +50,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     state: "",
     zip: "",
     item: "",
+    hcpcCode: "",
     diagnosis: "",
     insurance: "",
   });
@@ -133,6 +135,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
       phone: sanitize(form.phone),
       address: [sanitize(form.address), sanitize(form.city), sanitize(form.state), sanitize(form.zip)].filter(Boolean).join(", "),
       item: sanitize(form.item),
+      hcpcCode: sanitize(form.hcpcCode),
       diagnosis: sanitize(form.diagnosis),
       insurance: sanitize(form.insurance),
     };
@@ -186,7 +189,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     }
 
     onSubmit({ ...sanitizedForm, shipTo, shipToOther: shipTo === "other" ? shipToOther.trim() : undefined, documents: uploadedDocs });
-    setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", diagnosis: "", insurance: "" });
+    setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", hcpcCode: "", diagnosis: "", insurance: "" });
     setShipTo("patient");
     setShipToOther("");
     setIsOtherItem(false);
@@ -366,6 +369,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
                   {/* Hidden required input for form validation */}
                   <input type="text" value={form.item} required className="sr-only" tabIndex={-1} onChange={() => {}} />
                 </div>
+                <Field label="HCPC Code" value={form.hcpcCode} onChange={set("hcpcCode")} required placeholder="e.g. E0100" />
                 <Field label="Diagnosis" value={form.diagnosis} onChange={set("diagnosis")} required placeholder="e.g. M17.11" />
 
                 {/* Insurance dropdown */}

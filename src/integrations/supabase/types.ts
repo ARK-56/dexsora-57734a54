@@ -302,6 +302,7 @@ export type Database = {
           doctor_name: string | null
           doctor_npi: string | null
           email: string | null
+          hcpc_code: string | null
           id: string
           insurance: string | null
           item: string | null
@@ -328,6 +329,7 @@ export type Database = {
           doctor_name?: string | null
           doctor_npi?: string | null
           email?: string | null
+          hcpc_code?: string | null
           id?: string
           insurance?: string | null
           item?: string | null
@@ -354,6 +356,7 @@ export type Database = {
           doctor_name?: string | null
           doctor_npi?: string | null
           email?: string | null
+          hcpc_code?: string | null
           id?: string
           insurance?: string | null
           item?: string | null
