@@ -361,6 +361,7 @@ export const useLeads = () => {
     return (leadsData || []).map((lead) => ({
       ...lead,
       item: (lead as any).item || null,
+      hcpc_code: (lead as any).hcpc_code || null,
       diagnosis: (lead as any).diagnosis || null,
       doctor_name: (lead as any).doctor_name || null,
       doctor_npi: (lead as any).doctor_npi || null,
