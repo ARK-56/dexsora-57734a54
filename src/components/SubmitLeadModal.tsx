@@ -189,7 +189,7 @@ export const SubmitLeadModal = ({ isOpen, onClose, onSubmit }: SubmitLeadModalPr
     }
 
     onSubmit({ ...sanitizedForm, shipTo, shipToOther: shipTo === "other" ? shipToOther.trim() : undefined, documents: uploadedDocs });
-    setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", diagnosis: "", insurance: "" });
+    setForm({ patientName: "", dob: "", phone: "", address: "", city: "", state: "", zip: "", item: "", hcpcCode: "", diagnosis: "", insurance: "" });
     setShipTo("patient");
     setShipToOther("");
     setIsOtherItem(false);
