@@ -15,6 +15,7 @@ export interface DbLead {
   ppo_id: string | null;
   dme_items: string | null;
   item: string | null;
+  hcpc_code: string | null;
   diagnosis: string | null;
   doctor_name: string | null;
   doctor_npi: string | null;
